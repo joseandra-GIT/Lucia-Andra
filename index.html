@@ -140,9 +140,9 @@
                 </button>
             </div>
 
-            <!-- MODIFICAR PORTADA -->
+            <!-- MODIFICAR PORTADA PRINCIPAL -->
             <div class="bg-zinc-800 border border-white/20 p-6 rounded-2xl mb-8 shadow-2xl">
-                <h3 class="text-xl cinematic-font mb-4 text-white">Modificar Imagen de Portada</h3>
+                <h3 class="text-xl cinematic-font mb-4 text-white">Modificar Portada Principal</h3>
                 <input type="file" id="new-hero-file" accept="image/*" class="w-full text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black hover:file:bg-gray-200 cursor-pointer">
                 <button onclick="handleHeroUpload()" class="w-full mt-4 bg-zinc-700 text-white font-semibold py-3 rounded-lg hover:bg-zinc-600 transition-colors">
                     Actualizar Portada
@@ -169,6 +169,24 @@
                     
                     <button onclick="handleCreateProfile()" class="w-full mt-4 bg-zinc-700 text-white font-semibold py-3 rounded-lg hover:bg-zinc-600 transition-colors">
                         Crear Perfil
+                    </button>
+                </div>
+            </div>
+
+            <!-- MODIFICAR PORTADA DE PERFIL EXISTENTE -->
+            <div class="bg-zinc-800 border border-white/20 p-6 rounded-2xl mb-8 shadow-2xl">
+                <h3 class="text-xl cinematic-font mb-4 text-white">Modificar Portada de Perfil</h3>
+                <div class="space-y-4">
+                    <label class="block text-sm text-gray-400">Selecciona el perfil a modificar:</label>
+                    <select id="update-profile-category" class="w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-white transition-colors">
+                        <!-- Llenado dinámicamente -->
+                    </select>
+                    
+                    <label class="block text-sm text-gray-400 mt-2">Sube la nueva imagen de Portada:</label>
+                    <input type="file" id="update-profile-cover" accept="image/*" class="w-full text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black hover:file:bg-gray-200 cursor-pointer">
+                    
+                    <button onclick="handleUpdateProfileCover()" class="w-full mt-4 bg-zinc-700 text-white font-semibold py-3 rounded-lg hover:bg-zinc-600 transition-colors">
+                        Actualizar Portada de Perfil
                     </button>
                 </div>
             </div>
@@ -292,7 +310,6 @@
             <!-- CONTENEDOR 2: FOTOS DENTRO DE UN PERFIL (MODAL FIJO) -->
             <div id="profile-detail-view" class="hidden flex flex-col fixed inset-0 bg-black z-50 pt-12 pb-0">
                 
-                <!-- BOTÓN VOLVER FLOTANTE (SIEMPRE VISIBLE) -->
                 <button onclick="closeProfileDetail()" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-zinc-800/90 backdrop-blur-md border border-white/20 text-white px-6 py-3 rounded-full font-semibold shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-[60] flex items-center gap-2 hover:bg-zinc-700 transition-all">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                     Volver a Perfiles
@@ -332,6 +349,198 @@
         </section>
     </div>
 
+    <!-- ========================================================= -->
+    <!-- MÓDULO FIREBASE PARA GUARDADO PERSISTENTE EN LA NUBE      -->
+    <!-- ========================================================= -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, updateDoc, getDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'webbook-actriz-default';
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let firebaseUser = null;
+
+        // Compresor de imágenes para evitar límites de subida en la base de datos
+        window.resizeImage = function(file, maxWidth, maxHeight) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > maxWidth || height > maxHeight) {
+                            const ratio = Math.min(maxWidth / width, maxHeight / height);
+                            width *= ratio;
+                            height *= ratio;
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        // Convertir a JPEG con un 80% de calidad para optimizar carga
+                        resolve(canvas.toDataURL('image/jpeg', 0.8));
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        };
+
+        async function initAuth() {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            firebaseUser = user;
+            if (user) {
+                setupListeners();
+            }
+        });
+
+        function setupListeners() {
+            // Escuchar cambios en la configuración general (Portadas y horas)
+            onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), (docSnap) => {
+                if (docSnap.exists()) {
+                    window.appSettings = { ...window.appSettings, ...docSnap.data() };
+                    document.getElementById('hero-img').src = window.appSettings.heroCover;
+                    document.getElementById('interactive-portrait').src = window.appSettings.interactiveCover;
+                    document.getElementById('guest-hours-input').value = window.appSettings.guestAllowedHours;
+                } else {
+                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), window.appSettings);
+                }
+            });
+
+            // Escuchar cambios en los Perfiles (Categorías)
+            const catRef = collection(db, 'artifacts', appId, 'public', 'data', 'categories');
+            onSnapshot(catRef, (snap) => {
+                if (snap.empty) {
+                    // Sembrar perfiles por defecto si la base de datos está vacía
+                    const defaultCats = [
+                        { id: 'comedia', name: 'Comedia', cover: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=600&q=80' },
+                        { id: 'drama', name: 'Drama', cover: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80' },
+                        { id: 'epoca', name: 'Época', cover: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80' }
+                    ];
+                    defaultCats.forEach(c => setDoc(doc(catRef, c.id), c));
+                } else {
+                    window.categories = {};
+                    snap.forEach(d => window.categories[d.id] = d.data());
+                    if (window.currentUser) window.renderProfiles();
+                }
+            });
+
+            // Escuchar cambios en las Fotografías
+            const photoRef = collection(db, 'artifacts', appId, 'public', 'data', 'photos');
+            onSnapshot(photoRef, (snap) => {
+                window.photos = {};
+                snap.forEach(d => window.photos[d.id] = d.data());
+                if (window.currentUser) {
+                    window.renderProfiles();
+                    if (document.getElementById('admin-panel').classList.contains('flex')) {
+                        window.renderAdminPermissionsList();
+                    }
+                }
+            });
+        }
+
+        initAuth();
+
+        // Funciones conectadas a la base de datos
+        window.handleHeroUploadDB = async function(file) {
+            if(!firebaseUser) return;
+            window.showToast("Subiendo y optimizando portada...");
+            const base64 = await window.resizeImage(file, 1600, 1600);
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), { ...window.appSettings, heroCover: base64 });
+            window.showToast("Portada principal actualizada en la nube.");
+        };
+
+        window.handleInteractiveUploadDB = async function(file) {
+            if(!firebaseUser) return;
+            window.showToast("Subiendo imagen interactiva...");
+            const base64 = await window.resizeImage(file, 1200, 1200);
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), { ...window.appSettings, interactiveCover: base64 });
+            window.showToast("Imagen interactiva actualizada.");
+        };
+
+        window.handleCreateProfileDB = async function(id, name, file) {
+            if(!firebaseUser) return;
+            window.showToast("Creando perfil...");
+            const base64 = await window.resizeImage(file, 800, 800);
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'categories', id), { id, name, cover: base64 });
+            window.showToast(`Perfil "${name}" guardado.`);
+        };
+
+        window.updateProfileCoverDB = async function(categoryId, file) {
+            if(!firebaseUser) return;
+            window.showToast("Subiendo nueva portada de perfil...");
+            const base64 = await window.resizeImage(file, 800, 800);
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'categories', categoryId), { cover: base64 });
+            window.showToast("Portada del perfil actualizada.");
+        };
+
+        window.handleUploadPhotoDB = async function(id, categoryId, file, perms) {
+            if(!firebaseUser) return;
+            window.showToast("Subiendo y comprimiendo fotografía...");
+            const base64 = await window.resizeImage(file, 1200, 1200); 
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'photos', id), { categoryId, url: base64, perms });
+            window.showToast("Fotografía publicada.");
+        };
+
+        window.deletePhotoDB = async function(id) {
+            if(!firebaseUser) return;
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'photos', id));
+            window.showToast("Fotografía eliminada de la base de datos.");
+        };
+
+        window.updateGuestHoursDB = async function(hours) {
+            if(!firebaseUser) return;
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), { ...window.appSettings, guestAllowedHours: hours });
+            window.showToast("Horas de acceso guardadas.");
+        };
+
+        // Lógica de sesión individual persistente por dispositivo conectada a Firestore
+        window.checkGuestSession = async function() {
+            if(!firebaseUser) return null;
+            const sessionDoc = await getDoc(doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'session'));
+            const resetTime = window.appSettings.globalGuestResetTime || 0;
+            
+            if (sessionDoc.exists()) {
+                const data = sessionDoc.data();
+                if (data.createdAt < resetTime) {
+                     const newExp = Date.now() + (window.appSettings.guestAllowedHours * 3600000);
+                     await setDoc(doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'session'), { expirationTime: newExp, createdAt: Date.now() });
+                     return newExp;
+                }
+                return data.expirationTime;
+            } else {
+                const newExp = Date.now() + (window.appSettings.guestAllowedHours * 3600000);
+                await setDoc(doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'session'), { expirationTime: newExp, createdAt: Date.now() });
+                return newExp;
+            }
+        };
+
+        window.resetGuestSession = async function() {
+            if(!firebaseUser) return;
+            const resetTime = Date.now();
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), { ...window.appSettings, globalGuestResetTime: resetTime });
+            window.showToast("Contador de invitados reseteado para todo el mundo.");
+        };
+    </script>
+
+    <!-- ========================================================= -->
+    <!-- LÓGICA PRINCIPAL DE INTERFAZ DEL WEB BOOK                 -->
+    <!-- ========================================================= -->
     <script>
         // Animaciones Reveal
         const revealElements = document.querySelectorAll('.reveal');
@@ -353,24 +562,15 @@
         touchSection.addEventListener('mouseup', endInteraction);
         touchSection.addEventListener('mouseleave', endInteraction);
 
-        // ==========================================
-        // SISTEMA DE DATOS EN MEMORIA (PERFILES Y FOTOS)
-        // ==========================================
-
-        // Objeto principal que guarda las categorías y sus fotos
-        let categories = {
-            'comedia': { id: 'comedia', name: 'Comedia', cover: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=600&q=80' },
-            'drama':   { id: 'drama', name: 'Drama', cover: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80' },
-            'epoca':   { id: 'epoca', name: 'Época', cover: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80' }
+        // Referencias globales de datos y estado
+        window.categories = {};
+        window.photos = {};
+        window.appSettings = {
+            heroCover: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80',
+            interactiveCover: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1000&q=80',
+            guestAllowedHours: 1
         };
-
-        // Objeto de fotos con sus permisos asociados a una categoría
-        // Nota: Para fines de prototipo y evitar bloqueos de caché de localStorage, manejamos las fotos en memoria.
-        let photos = {
-            'p1': { categoryId: 'comedia', url: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=800&q=80', perms: {admin: true, director: true, invitado: true} },
-            'p2': { categoryId: 'drama', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80', perms: {admin: true, director: true, invitado: false} },
-            'p3': { categoryId: 'epoca', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80', perms: {admin: true, director: true, invitado: true} }
-        };
+        window.currentUser = null;
 
         const mockUsers = {
             'admin': { pass: 'admin123', role: 'admin', name: 'Administrador' },
@@ -378,8 +578,6 @@
             'invitado': { pass: 'hola', role: 'invitado', name: 'Usuario General' }
         };
 
-        let currentUser = null;
-        let guestAllowedHours = localStorage.getItem('guestAllowedHours') ? parseFloat(localStorage.getItem('guestAllowedHours')) : 1; 
         let guestTimerInterval = null;
 
         const loginView = document.getElementById('login-view');
@@ -394,10 +592,12 @@
         const profileDetailView = document.getElementById('profile-detail-view');
         const activeProfileTitle = document.getElementById('active-profile-title');
         const activeProfilePhotos = document.getElementById('active-profile-photos');
+        
         const dropdownCategory = document.getElementById('new-photo-category');
+        const updateDropdownCategory = document.getElementById('update-profile-category');
 
 
-        function showToast(message) {
+        window.showToast = function(message) {
             const toast = document.getElementById('toast');
             document.getElementById('toast-msg').innerText = message;
             toast.classList.remove('hidden');
@@ -406,37 +606,36 @@
                 toast.classList.add('opacity-0');
                 setTimeout(() => toast.classList.add('hidden'), 300);
             }, 3000);
-        }
+        };
 
-        function handleLogin() {
+        async function handleLogin() {
             const userIn = document.getElementById('username').value.trim().toLowerCase();
             const passIn = document.getElementById('password').value;
 
             if (mockUsers[userIn] && mockUsers[userIn].pass === passIn) {
-                currentUser = mockUsers[userIn];
+                window.currentUser = mockUsers[userIn];
                 document.getElementById('login-error').classList.add('hidden');
                 
-                if (currentUser.role === 'invitado') {
-                    let expirationTime = localStorage.getItem('guestExpirationTime');
-                    if (!expirationTime) {
-                        expirationTime = Date.now() + (guestAllowedHours * 3600000);
-                        localStorage.setItem('guestExpirationTime', expirationTime);
-                    }
-                    if (Date.now() >= expirationTime) {
+                if (window.currentUser.role === 'invitado') {
+                    document.getElementById('login-error').innerText = "Verificando tu tiempo de acceso...";
+                    document.getElementById('login-error').classList.remove('hidden');
+                    
+                    const expirationTime = await window.checkGuestSession();
+                    if (expirationTime && Date.now() >= expirationTime) {
                         document.getElementById('login-error').innerText = "Tu tiempo ha expirado. Contacta con administración.";
-                        document.getElementById('login-error').classList.remove('hidden');
-                        currentUser = null; return;
+                        window.currentUser = null; return;
                     }
                     startGuestTimer(expirationTime);
+                    document.getElementById('login-error').classList.add('hidden');
                 }
 
                 loginView.classList.add('hidden');
                 mainContainer.classList.remove('hidden');
                 btnLogout.classList.remove('hidden');
 
-                if (currentUser.role === 'admin') btnOpenAdmin.classList.remove('hidden');
+                if (window.currentUser.role === 'admin') btnOpenAdmin.classList.remove('hidden');
                 
-                renderProfiles(); // Generar las portadas de perfiles permitidas
+                window.renderProfiles(); 
             } else {
                 document.getElementById('login-error').innerText = "Credenciales incorrectas";
                 document.getElementById('login-error').classList.remove('hidden');
@@ -444,7 +643,7 @@
         }
 
         function handleLogout() {
-            currentUser = null;
+            window.currentUser = null;
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
             
@@ -466,7 +665,7 @@
             guestTimerInterval = setInterval(() => {
                 const diff = endTime - Date.now();
                 if (diff <= 0) {
-                    handleLogout(); showToast("Tu tiempo de acceso ha finalizado."); clearInterval(guestTimerInterval);
+                    handleLogout(); window.showToast("Tu tiempo de acceso ha finalizado."); clearInterval(guestTimerInterval);
                 } else {
                     const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
                     const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
@@ -480,32 +679,39 @@
         // RENDERIZADO DE INTERFAZ
         // ==========================================
 
-        function renderProfiles() {
-            if (!currentUser) return;
+        window.renderProfiles = function() {
+            if (!window.currentUser) return;
             profilesListContainer.innerHTML = '';
-            dropdownCategory.innerHTML = '';
+            
+            if (dropdownCategory) dropdownCategory.innerHTML = '';
+            if (updateDropdownCategory) updateDropdownCategory.innerHTML = '';
 
-            for (const [catId, catData] of Object.entries(categories)) {
+            for (const [catId, catData] of Object.entries(window.categories)) {
                 
-                // Opción para el panel admin
-                const option = document.createElement('option');
-                option.value = catId; option.innerText = catData.name;
-                dropdownCategory.appendChild(option);
+                if (dropdownCategory) {
+                    const option = document.createElement('option');
+                    option.value = catId; option.innerText = catData.name;
+                    dropdownCategory.appendChild(option);
+                }
+                
+                if (updateDropdownCategory) {
+                    const optionUpdate = document.createElement('option');
+                    optionUpdate.value = catId; optionUpdate.innerText = catData.name;
+                    updateDropdownCategory.appendChild(optionUpdate);
+                }
 
-                // Comprobar si el usuario tiene permiso para ver ALGUNA foto en esta categoría
                 let hasVisiblePhotos = false;
-                if (currentUser.role === 'admin') {
+                if (window.currentUser.role === 'admin') {
                     hasVisiblePhotos = true;
                 } else {
-                    for (const photoId in photos) {
-                        if (photos[photoId].categoryId === catId && photos[photoId].perms[currentUser.role]) {
+                    for (const photoId in window.photos) {
+                        if (window.photos[photoId].categoryId === catId && window.photos[photoId].perms[window.currentUser.role]) {
                             hasVisiblePhotos = true; break;
                         }
                     }
                 }
 
                 if (hasVisiblePhotos) {
-                    // Crear tarjeta de portada
                     const card = document.createElement('div');
                     card.className = 'relative h-64 sm:h-80 rounded-xl overflow-hidden shadow-2xl cursor-pointer group';
                     card.onclick = () => openProfileDetail(catId);
@@ -521,19 +727,17 @@
                     profilesListContainer.appendChild(card);
                 }
             }
-        }
+        };
 
         function openProfileDetail(categoryId) {
-            const catData = categories[categoryId];
+            const catData = window.categories[categoryId];
             activeProfileTitle.innerText = catData.name;
-            activeProfilePhotos.innerHTML = ''; // Limpiar galería
+            activeProfilePhotos.innerHTML = ''; 
 
-            // Añadir las fotos que pertenecen a este perfil
-            for (const [photoId, photoData] of Object.entries(photos)) {
-                if (photoData.categoryId === categoryId && photoData.perms[currentUser.role]) {
+            for (const [photoId, photoData] of Object.entries(window.photos)) {
+                if (photoData.categoryId === categoryId && photoData.perms[window.currentUser.role]) {
                     const imgDiv = document.createElement('div');
                     imgDiv.className = 'w-full bg-zinc-900 rounded-lg overflow-hidden shadow-2xl flex justify-center py-4 border border-white/5';
-                    // IMPORTANTE: object-contain para que la foto se vea COMPLETA
                     imgDiv.innerHTML = `<img src="${photoData.url}" alt="Foto" class="w-full h-auto max-h-[85vh] object-contain" />`;
                     activeProfilePhotos.appendChild(imgDiv);
                 }
@@ -550,76 +754,67 @@
         }
 
         // ==========================================
-        // LÓGICA DE ADMINISTRADOR
+        // LÓGICA DE ADMINISTRADOR CONECTADA
         // ==========================================
         
         function updateGuestHours() {
             const val = parseFloat(document.getElementById('guest-hours-input').value);
-            if (val > 0) { guestAllowedHours = val; localStorage.setItem('guestAllowedHours', val); showToast(`Acceso guardado.`); }
+            if (val > 0) window.updateGuestHoursDB(val);
         }
-        function resetGuestTimer() { localStorage.removeItem('guestExpirationTime'); showToast("Contador reseteado."); }
+
+        function resetGuestTimer() { 
+            window.resetGuestSession(); 
+        }
 
         function openAdmin() {
-            document.getElementById('guest-hours-input').value = guestAllowedHours;
             adminPanel.classList.remove('hidden'); adminPanel.classList.add('flex');
-            renderAdminPermissionsList();
+            window.renderAdminPermissionsList();
         }
 
         function closeAdmin() {
             adminPanel.classList.add('hidden'); adminPanel.classList.remove('flex');
-            renderProfiles(); // Actualiza la vista por si creó algún perfil
+            window.renderProfiles(); 
         }
 
-        // 1. Modificar Foto Portada Hero
         function handleHeroUpload() {
             const fileInput = document.getElementById('new-hero-file');
             if (!fileInput.files[0]) { alert('Selecciona una imagen.'); return; }
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('hero-img').src = e.target.result;
-                fileInput.value = '';
-                showToast("Portada principal actualizada.");
-            };
-            reader.readAsDataURL(fileInput.files[0]);
+            window.handleHeroUploadDB(fileInput.files[0]).then(() => { fileInput.value = ''; });
         }
 
-        // 1.5 Modificar Foto Interactiva
         function handleInteractiveUpload() {
             const fileInput = document.getElementById('new-interactive-file');
             if (!fileInput.files[0]) { alert('Selecciona una imagen.'); return; }
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('interactive-portrait').src = e.target.result;
-                fileInput.value = '';
-                showToast("Imagen interactiva actualizada.");
-            };
-            reader.readAsDataURL(fileInput.files[0]);
+            window.handleInteractiveUploadDB(fileInput.files[0]).then(() => { fileInput.value = ''; });
         }
 
-        // 2. Crear Nuevo Perfil (Carpeta)
         function handleCreateProfile() {
             const nameInput = document.getElementById('new-profile-name').value.trim();
             const fileInput = document.getElementById('new-profile-cover');
             
             if (!nameInput || !fileInput.files[0]) { alert('Falta el nombre o la imagen de portada.'); return; }
-
             const newCatId = nameInput.toLowerCase().replace(/[^a-z0-9]/g, '-');
-            const reader = new FileReader();
-
-            reader.onload = function(e) {
-                categories[newCatId] = { id: newCatId, name: nameInput, cover: e.target.result };
-                
+            
+            window.handleCreateProfileDB(newCatId, nameInput, fileInput.files[0]).then(() => {
                 document.getElementById('new-profile-name').value = '';
                 fileInput.value = '';
-                
-                // Refrescar desplegable
-                renderProfiles();
-                showToast(`Perfil "${nameInput}" creado con éxito.`);
-            };
-            reader.readAsDataURL(fileInput.files[0]);
+            });
         }
 
-        // 3. Añadir foto completa a un Perfil
+        function handleUpdateProfileCover() {
+            const categoryId = document.getElementById('update-profile-category').value;
+            const fileInput = document.getElementById('update-profile-cover');
+
+            if (!categoryId || !fileInput.files[0]) { 
+                alert('Selecciona un perfil y una nueva imagen para la portada.'); 
+                return; 
+            }
+
+            window.updateProfileCoverDB(categoryId, fileInput.files[0]).then(() => {
+                fileInput.value = '';
+            });
+        }
+
         function handleUploadPhoto() {
             const categoryId = document.getElementById('new-photo-category').value;
             const fileInput = document.getElementById('new-photo-file');
@@ -629,33 +824,27 @@
             if (!fileInput.files[0] || !categoryId) { alert('Selecciona un perfil y una imagen.'); return; }
 
             const newPhotoId = 'p-' + Date.now().toString().slice(-5);
-            const reader = new FileReader();
-
-            reader.onload = function(e) {
-                photos[newPhotoId] = {
-                    categoryId: categoryId,
-                    url: e.target.result,
-                    perms: { admin: true, director: permDirector, invitado: permInvitado }
-                };
+            window.handleUploadPhotoDB(newPhotoId, categoryId, fileInput.files[0], { 
+                admin: true, director: permDirector, invitado: permInvitado 
+            }).then(() => {
                 fileInput.value = '';
-                renderAdminPermissionsList();
-                showToast(`Fotografía añadida correctamente.`);
-            };
-            reader.readAsDataURL(fileInput.files[0]);
+            });
         }
 
-        // 4. Panel inferior de permisos
-        function renderAdminPermissionsList() {
+        window.renderAdminPermissionsList = function() {
             const container = document.getElementById('admin-permissions-container');
             container.innerHTML = '';
             
-            for (const [photoId, photoData] of Object.entries(photos)) {
-                const catName = categories[photoData.categoryId].name;
+            for (const [photoId, photoData] of Object.entries(window.photos)) {
+                // Prevenir error si la foto existe pero su categoría fue borrada previamente
+                if (!window.categories[photoData.categoryId]) continue;
+
+                const catName = window.categories[photoData.categoryId].name;
                 const block = document.createElement('div');
                 block.className = 'bg-zinc-900 border border-white/10 p-4 rounded-xl flex items-center justify-between';
                 
                 const info = document.createElement('div');
-                info.innerHTML = `<h3 class="text-white font-semibold mb-2">Dentro de: ${catName} <span class="text-xs text-gray-500 font-normal ml-2">(${photoId})</span></h3>`;
+                info.innerHTML = `<h3 class="text-white font-semibold mb-2">Dentro de: ${catName}</h3>`;
                 
                 const rolesDiv = document.createElement('div');
                 rolesDiv.className = 'flex gap-4';
@@ -667,9 +856,13 @@
                     checkbox.type = 'checkbox';
                     checkbox.className = 'w-4 h-4 accent-zinc-500 rounded cursor-pointer';
                     checkbox.checked = photoData.perms[role];
-                    checkbox.onchange = (e) => { photos[photoId].perms[role] = e.target.checked; };
+                    
+                    // Modificar permiso dinámicamente y guardarlo
+                    checkbox.onchange = (e) => { 
+                        photoData.perms[role] = e.target.checked; 
+                        window.handleUploadPhotoDB(photoId, photoData.categoryId, null, photoData.perms);
+                    };
 
-                    label.innerHTML = ``;
                     label.appendChild(checkbox);
                     label.innerHTML += `<span class="text-sm text-gray-300 capitalize ml-2">${role}</span>`;
                     rolesDiv.appendChild(label);
@@ -678,7 +871,6 @@
                 info.appendChild(rolesDiv);
                 block.appendChild(info);
                 
-                // Lado derecho: Miniatura y Botón Eliminar
                 const rightSide = document.createElement('div');
                 rightSide.className = "flex flex-col items-center ml-4 gap-3 shrink-0";
 
@@ -689,25 +881,17 @@
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = "text-xs text-red-500 hover:text-red-400 flex items-center gap-1 transition-colors";
                 deleteBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Eliminar`;
-                deleteBtn.onclick = () => deletePhoto(photoId);
+                deleteBtn.onclick = () => {
+                    if (confirm("¿Eliminar fotografía para siempre?")) window.deletePhotoDB(photoId);
+                };
 
                 rightSide.appendChild(thumb);
                 rightSide.appendChild(deleteBtn);
 
                 block.appendChild(rightSide);
-
                 container.appendChild(block);
             }
-        }
-
-        // NUEVO: Función para eliminar fotos del registro
-        function deletePhoto(photoId) {
-            if (confirm("¿Estás seguro de que deseas eliminar esta fotografía? Esta acción no se puede deshacer.")) {
-                delete photos[photoId]; // Elimina la foto de la memoria
-                renderAdminPermissionsList(); // Refresca la lista del panel
-                showToast("Fotografía eliminada correctamente.");
-            }
-        }
+        };
 
         document.getElementById('password').addEventListener('keypress', function(e) { if (e.key === 'Enter') handleLogin(); });
 
@@ -715,17 +899,17 @@
         // SISTEMAS DE PROTECCIÓN Y ANTI-CAPTURA
         // ==========================================
 
-        document.addEventListener('contextmenu', e => { e.preventDefault(); showToast("La descarga de imágenes no está permitida."); });
+        document.addEventListener('contextmenu', e => { e.preventDefault(); window.showToast("La descarga de imágenes no está permitida."); });
         document.addEventListener('dragstart', e => { if (e.target.tagName === 'IMG') e.preventDefault(); });
         document.addEventListener('keydown', e => {
             if (e.key === 'PrintScreen' || (e.ctrlKey && e.key === 'p') || (e.metaKey && e.key === 'p') || (e.metaKey && e.shiftKey)) {
-                navigator.clipboard.writeText(''); showToast("Acción no permitida.");
+                navigator.clipboard.writeText(''); window.showToast("Acción no permitida.");
             }
         });
         document.addEventListener('keyup', e => { if (e.key === 'PrintScreen') navigator.clipboard.writeText(''); });
 
         window.addEventListener('blur', () => {
-            if (currentUser) {
+            if (window.currentUser) {
                 document.body.classList.add('blur-content');
                 document.getElementById('screenshot-overlay').style.display = 'flex';
             }

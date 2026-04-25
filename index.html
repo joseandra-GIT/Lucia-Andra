@@ -61,13 +61,11 @@
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
         }
 
-        /* --- NUEVO: Galería Vertical --- */
         .vertical-gallery {
             max-height: 75vh;
             overflow-y: auto;
             width: 100%;
             padding-bottom: 2rem;
-            /* Scroll suave para la galería interna */
             scroll-behavior: smooth; 
         }
 
@@ -77,8 +75,6 @@
             user-select: none;
             -webkit-touch-callout: none;
         }
-        
-        /* Se ha eliminado 'pointer-events: none;' de las imágenes para permitir la interacción */
 
         #screenshot-overlay {
             display: none;
@@ -102,12 +98,10 @@
 </head>
 <body class="antialiased selection:bg-white selection:text-black">
 
-    <!-- PANTALLA ANTI-CAPTURA -->
     <div id="screenshot-overlay">
         <p>Contenido Protegido.<br><span class="text-sm">Las capturas de pantalla están deshabilitadas.</span></p>
     </div>
 
-    <!-- TOAST DE NOTIFICACIONES -->
     <div id="toast" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-white text-black px-6 py-3 rounded-full shadow-2xl z-[9999] opacity-0 transition-opacity duration-300 pointer-events-none hidden">
         <span id="toast-msg" class="font-semibold text-sm"></span>
     </div>
@@ -145,29 +139,37 @@
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            
-            <!-- CONFIGURACIÓN DE INVITADOS -->
+
+            <!-- MODIFICAR PORTADA -->
             <div class="bg-zinc-800 border border-white/20 p-6 rounded-2xl mb-8 shadow-2xl">
-                <h3 class="text-xl cinematic-font mb-4 text-white">Configuración de Acceso</h3>
-                <label class="block text-sm text-gray-400 mb-2">Horas de acceso permitidas para Perfil Invitado:</label>
-                <div class="flex items-center space-x-4">
-                    <input type="number" id="guest-hours-input" value="1" min="0.1" step="0.1" class="w-24 bg-black border border-white/20 rounded-lg px-4 py-2 text-white text-center focus:outline-none focus:border-white">
-                    <span class="text-gray-300">hora(s)</span>
-                    <button onclick="updateGuestHours()" class="bg-zinc-700 text-white px-4 py-2 rounded-lg hover:bg-zinc-600 transition-colors text-sm">Guardar</button>
-                    <button onclick="resetGuestTimer()" class="bg-red-900/80 border border-red-500/50 text-white px-4 py-2 rounded-lg hover:bg-red-800 transition-colors text-sm">Resetear Acceso</button>
+                <h3 class="text-xl cinematic-font mb-4 text-white">Modificar Imagen de Portada</h3>
+                <input type="file" id="new-hero-file" accept="image/*" class="w-full text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black hover:file:bg-gray-200 cursor-pointer">
+                <button onclick="handleHeroUpload()" class="w-full mt-4 bg-zinc-700 text-white font-semibold py-3 rounded-lg hover:bg-zinc-600 transition-colors">
+                    Actualizar Portada
+                </button>
+            </div>
+            
+            <!-- CREAR NUEVO PERFIL (CATEGORÍA) -->
+            <div class="bg-zinc-800 border border-white/20 p-6 rounded-2xl mb-8 shadow-2xl">
+                <h3 class="text-xl cinematic-font mb-4 text-white">Crear Nuevo Perfil (Categoría)</h3>
+                <div class="space-y-4">
+                    <input type="text" id="new-profile-name" placeholder="Nombre del perfil (Ej: Villana, Deportes...)" class="w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-white transition-colors">
+                    <label class="block text-sm text-gray-400 mt-2">Sube la imagen de Portada para este perfil:</label>
+                    <input type="file" id="new-profile-cover" accept="image/*" class="w-full text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black hover:file:bg-gray-200 cursor-pointer">
+                    
+                    <button onclick="handleCreateProfile()" class="w-full mt-4 bg-zinc-700 text-white font-semibold py-3 rounded-lg hover:bg-zinc-600 transition-colors">
+                        Crear Perfil
+                    </button>
                 </div>
             </div>
 
-            <!-- FORMULARIO DE SUBIDA DE IMAGEN -->
+            <!-- AÑADIR FOTOGRAFÍA AL PERFIL -->
             <div class="bg-zinc-800 border border-white/20 p-6 rounded-2xl mb-8 shadow-2xl">
-                <h3 class="text-xl cinematic-font mb-4 text-white">Añadir Fotografía a Perfil</h3>
+                <h3 class="text-xl cinematic-font mb-4 text-white">Añadir Fotografía a un Perfil</h3>
                 <div class="space-y-4">
-                    
                     <label class="block text-sm text-gray-400">Selecciona el perfil de destino:</label>
                     <select id="new-photo-category" class="w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-white transition-colors">
-                        <option value="comedia">Comedia</option>
-                        <option value="drama">Drama</option>
-                        <option value="epoca">Época</option>
+                        <!-- Llenado dinámicamente -->
                     </select>
                     
                     <input type="file" id="new-photo-file" accept="image/*" class="w-full mt-2 text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black hover:file:bg-gray-200 cursor-pointer">
@@ -186,25 +188,36 @@
                         </div>
                     </div>
                     
-                    <button onclick="handleUpload()" class="w-full mt-4 bg-white text-black font-semibold py-3 rounded-lg hover:bg-gray-200 transition-colors">
-                        Subir y Publicar
+                    <button onclick="handleUploadPhoto()" class="w-full mt-4 bg-white text-black font-semibold py-3 rounded-lg hover:bg-gray-200 transition-colors">
+                        Subir Imagen
                     </button>
+                </div>
+            </div>
+
+            <!-- CONFIGURACIÓN DE INVITADOS -->
+            <div class="bg-zinc-800 border border-white/20 p-6 rounded-2xl mb-8 shadow-2xl">
+                <h3 class="text-xl cinematic-font mb-4 text-white">Configuración de Acceso</h3>
+                <label class="block text-sm text-gray-400 mb-2">Horas de acceso permitidas para Perfil Invitado:</label>
+                <div class="flex items-center space-x-4">
+                    <input type="number" id="guest-hours-input" value="1" min="0.1" step="0.1" class="w-24 bg-black border border-white/20 rounded-lg px-4 py-2 text-white text-center focus:outline-none focus:border-white">
+                    <span class="text-gray-300">hora(s)</span>
+                    <button onclick="updateGuestHours()" class="bg-zinc-700 text-white px-4 py-2 rounded-lg hover:bg-zinc-600 transition-colors text-sm">Guardar</button>
+                    <button onclick="resetGuestTimer()" class="bg-red-900/80 border border-red-500/50 text-white px-4 py-2 rounded-lg hover:bg-red-800 transition-colors text-sm">Resetear Acceso</button>
                 </div>
             </div>
 
             <h3 class="text-xl cinematic-font mb-4 text-white border-b border-white/20 pb-2">Gestionar Permisos de Fotos Actuales</h3>
             <div id="admin-permissions-container" class="space-y-4">
-                <!-- Se llena dinámicamente con JS -->
+                <!-- Llenado dinámicamente -->
             </div>
         </div>
     </div>
 
-    <!-- BOTONES FLOTANTES SESIÓN -->
+    <!-- BOTONES FLOTANTES -->
     <button id="btn-open-admin" onclick="openAdmin()" class="fixed top-6 right-6 bg-zinc-800 border border-white/20 text-white px-4 py-2 rounded-full font-semibold shadow-lg z-40 hidden hover:bg-zinc-700 transition-colors">
         ⚙️ Panel Admin
     </button>
 
-    <!-- CONTADOR DE INVITADO -->
     <div id="guest-timer-display" class="fixed top-6 right-6 bg-black/80 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-full font-semibold shadow-lg z-40 hidden flex items-center space-x-2">
         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         <span id="time-remaining" class="tracking-wider">00:00:00</span>
@@ -219,7 +232,7 @@
         <!-- SECCIÓN 1: HERO CINEMÁTICO -->
         <section class="snap-section flex flex-col justify-end pb-20 relative">
             <div class="absolute inset-0 z-0">
-                <img src="https://via.placeholder.com/1200x800/111/fff?text=Portada+Lucia+Andra" alt="Retrato Actriz" class="w-full h-full object-cover object-center opacity-80" />
+                <img id="hero-img" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80" alt="Retrato Actriz" class="w-full h-full object-cover object-center opacity-80" />
                 <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
             </div>
             
@@ -252,53 +265,41 @@
             </div>
         </section>
 
-        <!-- SECCIÓN 3: VERSATILIDAD (GALERÍA VERTICAL) -->
+        <!-- SECCIÓN 3: PERFILES Y GALERÍAS -->
         <section class="snap-section bg-zinc-900 flex flex-col pt-16 pb-8">
-            <div class="px-6 mb-6 reveal">
-                <h2 class="text-3xl cinematic-font text-white mb-2">Perfiles</h2>
-                <div class="w-12 h-[1px] bg-white"></div>
+            
+            <!-- CONTENEDOR 1: LISTADO DE PORTADAS DE PERFILES -->
+            <div id="profiles-grid-view" class="flex flex-col h-full">
+                <div class="px-6 mb-6 reveal">
+                    <h2 class="text-3xl cinematic-font text-white mb-2">Perfiles</h2>
+                    <div class="w-12 h-[1px] bg-white"></div>
+                </div>
+                <div id="profiles-list-container" class="vertical-gallery px-6 grid grid-cols-1 sm:grid-cols-2 gap-6 reveal" style="transition-delay: 200ms;">
+                    <!-- Portadas dinámicas -->
+                </div>
             </div>
 
-            <!-- Contenedor con scroll vertical para las fotos y categorías -->
-            <div id="gallery-container" class="vertical-gallery px-6 reveal" style="transition-delay: 200ms;">
-                
-                <!-- Categoría: Comedia -->
-                <div id="category-comedia" class="mb-12">
-                    <h3 class="text-2xl cinematic-font font-bold mb-4 text-white border-b border-white/20 pb-2">Comedia</h3>
-                    <div id="photos-comedia" class="space-y-6">
-                        <div id="card-comedia-1" class="relative rounded-xl overflow-hidden shadow-2xl">
-                            <img src="https://via.placeholder.com/600x400/222/fff?text=Perfil+Comedia" alt="Comedia" class="w-full h-auto max-h-[60vh] object-cover" />
-                        </div>
+            <!-- CONTENEDOR 2: FOTOS DENTRO DE UN PERFIL -->
+            <div id="profile-detail-view" class="hidden flex flex-col h-full bg-black absolute inset-0 z-20 pt-16 pb-8">
+                <div class="px-6 mb-6 flex items-center justify-between">
+                    <div>
+                        <button onclick="closeProfileDetail()" class="text-gray-400 hover:text-white flex items-center gap-2 mb-2 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                            Volver a Perfiles
+                        </button>
+                        <h2 id="active-profile-title" class="text-3xl cinematic-font text-white">Nombre Perfil</h2>
                     </div>
                 </div>
-
-                <!-- Categoría: Drama -->
-                <div id="category-drama" class="mb-12">
-                    <h3 class="text-2xl cinematic-font font-bold mb-4 text-white border-b border-white/20 pb-2">Drama</h3>
-                    <div id="photos-drama" class="space-y-6">
-                        <div id="card-drama-1" class="relative rounded-xl overflow-hidden shadow-2xl">
-                            <img src="https://via.placeholder.com/600x400/333/fff?text=Perfil+Drama" alt="Drama" class="w-full h-auto max-h-[60vh] object-cover" />
-                        </div>
-                    </div>
+                <div id="active-profile-photos" class="vertical-gallery px-6 space-y-8">
+                    <!-- Fotos completas dinámicas -->
                 </div>
-
-                <!-- Categoría: Época -->
-                <div id="category-epoca" class="mb-12">
-                    <h3 class="text-2xl cinematic-font font-bold mb-4 text-white border-b border-white/20 pb-2">Época</h3>
-                    <div id="photos-epoca" class="space-y-6">
-                        <div id="card-epoca-1" class="relative rounded-xl overflow-hidden shadow-2xl">
-                            <img src="https://via.placeholder.com/600x400/444/fff?text=Perfil+Epoca" alt="Época" class="w-full h-auto max-h-[60vh] object-cover" />
-                        </div>
-                    </div>
-                </div>
-
             </div>
+
         </section>
 
-        <!-- SECCIÓN 4: FICHA TÉCNICA Y MEDIDAS -->
+        <!-- SECCIÓN 4: FICHA TÉCNICA -->
         <section class="snap-section bg-black flex flex-col items-center justify-center px-8 relative">
             <div class="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1200&q=80')] bg-cover bg-center"></div>
-            
             <div class="z-10 w-full max-w-md bg-zinc-900/80 backdrop-blur-md p-8 rounded-2xl border border-white/10 reveal">
                 <h2 class="text-3xl cinematic-font mb-6 text-center">Ficha Física</h2>
                 <div class="space-y-4 text-sm">
@@ -341,19 +342,28 @@
         touchSection.addEventListener('mouseleave', endInteraction);
 
         // ==========================================
-        // SISTEMA DE AUTENTICACIÓN Y ROLES
+        // SISTEMA DE DATOS EN MEMORIA (PERFILES Y FOTOS)
         // ==========================================
+
+        // Objeto principal que guarda las categorías y sus fotos
+        let categories = {
+            'comedia': { id: 'comedia', name: 'Comedia', cover: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=600&q=80' },
+            'drama':   { id: 'drama', name: 'Drama', cover: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80' },
+            'epoca':   { id: 'epoca', name: 'Época', cover: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80' }
+        };
+
+        // Objeto de fotos con sus permisos asociados a una categoría
+        // Nota: Para fines de prototipo y evitar bloqueos de caché de localStorage, manejamos las fotos en memoria.
+        let photos = {
+            'p1': { categoryId: 'comedia', url: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=800&q=80', perms: {admin: true, director: true, invitado: true} },
+            'p2': { categoryId: 'drama', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80', perms: {admin: true, director: true, invitado: false} },
+            'p3': { categoryId: 'epoca', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80', perms: {admin: true, director: true, invitado: true} }
+        };
+
         const mockUsers = {
             'admin': { pass: 'admin123', role: 'admin', name: 'Administrador' },
             'director': { pass: 'casting', role: 'director', name: 'Director de Casting' },
             'invitado': { pass: 'hola', role: 'invitado', name: 'Usuario General' }
-        };
-
-        // Permisos ahora asignados individualmente por fotografía, atados a su categoría
-        let photoPermissions = {
-            'comedia-1': { category: 'comedia', admin: true, director: true, invitado: true },
-            'drama-1':   { category: 'drama', admin: true, director: true, invitado: false }, 
-            'epoca-1':   { category: 'epoca', admin: true, director: true, invitado: true }
         };
 
         let currentUser = null;
@@ -362,15 +372,19 @@
 
         const loginView = document.getElementById('login-view');
         const mainContainer = document.getElementById('main-container');
-        const loginError = document.getElementById('login-error');
         const btnLogout = document.getElementById('btn-logout');
         const btnOpenAdmin = document.getElementById('btn-open-admin');
         const adminPanel = document.getElementById('admin-panel');
-        const adminPermsContainer = document.getElementById('admin-permissions-container');
-        const guestTimerDisplay = document.getElementById('guest-timer-display');
-        const timeRemainingText = document.getElementById('time-remaining');
 
-        // Función para mostrar mensajes (Toast)
+        // Referencias de las Vistas de Perfiles
+        const profilesGridView = document.getElementById('profiles-grid-view');
+        const profilesListContainer = document.getElementById('profiles-list-container');
+        const profileDetailView = document.getElementById('profile-detail-view');
+        const activeProfileTitle = document.getElementById('active-profile-title');
+        const activeProfilePhotos = document.getElementById('active-profile-photos');
+        const dropdownCategory = document.getElementById('new-photo-category');
+
+
         function showToast(message) {
             const toast = document.getElementById('toast');
             document.getElementById('toast-msg').innerText = message;
@@ -388,24 +402,19 @@
 
             if (mockUsers[userIn] && mockUsers[userIn].pass === passIn) {
                 currentUser = mockUsers[userIn];
-                loginError.classList.add('hidden');
+                document.getElementById('login-error').classList.add('hidden');
                 
-                // Lógica de Persistencia para Invitados
                 if (currentUser.role === 'invitado') {
                     let expirationTime = localStorage.getItem('guestExpirationTime');
-                    
                     if (!expirationTime) {
                         expirationTime = Date.now() + (guestAllowedHours * 3600000);
                         localStorage.setItem('guestExpirationTime', expirationTime);
                     }
-                    
                     if (Date.now() >= expirationTime) {
-                        loginError.innerText = "Tu tiempo de acceso ha expirado. Contacta con administración.";
-                        loginError.classList.remove('hidden');
-                        currentUser = null;
-                        return;
+                        document.getElementById('login-error').innerText = "Tu tiempo ha expirado. Contacta con administración.";
+                        document.getElementById('login-error').classList.remove('hidden');
+                        currentUser = null; return;
                     }
-                    
                     startGuestTimer(expirationTime);
                 }
 
@@ -413,13 +422,12 @@
                 mainContainer.classList.remove('hidden');
                 btnLogout.classList.remove('hidden');
 
-                if (currentUser.role === 'admin') {
-                    btnOpenAdmin.classList.remove('hidden');
-                }
-                applyPermissions();
+                if (currentUser.role === 'admin') btnOpenAdmin.classList.remove('hidden');
+                
+                renderProfiles(); // Generar las portadas de perfiles permitidas
             } else {
-                loginError.innerText = "Credenciales incorrectas";
-                loginError.classList.remove('hidden');
+                document.getElementById('login-error').innerText = "Credenciales incorrectas";
+                document.getElementById('login-error').classList.remove('hidden');
             }
         }
 
@@ -429,7 +437,7 @@
             document.getElementById('password').value = '';
             
             if (guestTimerInterval) clearInterval(guestTimerInterval);
-            guestTimerDisplay.classList.add('hidden');
+            document.getElementById('guest-timer-display').classList.add('hidden');
 
             loginView.classList.remove('hidden');
             mainContainer.classList.add('hidden');
@@ -437,207 +445,238 @@
             btnOpenAdmin.classList.add('hidden');
             adminPanel.classList.add('hidden');
             adminPanel.classList.remove('flex');
+            closeProfileDetail();
         }
 
         function startGuestTimer(endTime) {
+            const guestTimerDisplay = document.getElementById('guest-timer-display');
             guestTimerDisplay.classList.remove('hidden');
-            
             guestTimerInterval = setInterval(() => {
                 const diff = endTime - Date.now();
                 if (diff <= 0) {
-                    handleLogout();
-                    showToast("Tu tiempo de acceso ha finalizado.");
-                    clearInterval(guestTimerInterval);
+                    handleLogout(); showToast("Tu tiempo de acceso ha finalizado."); clearInterval(guestTimerInterval);
                 } else {
                     const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
                     const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
                     const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-                    timeRemainingText.innerText = `${h}:${m}:${s}`;
+                    document.getElementById('time-remaining').innerText = `${h}:${m}:${s}`;
                 }
             }, 1000);
         }
 
-        function applyPermissions() {
+        // ==========================================
+        // RENDERIZADO DE INTERFAZ
+        // ==========================================
+
+        function renderProfiles() {
             if (!currentUser) return;
-            const role = currentUser.role;
-            
-            // 1. Mostrar/Ocultar fotos individuales
-            for (const [fotoId, perms] of Object.entries(photoPermissions)) {
-                const cardElement = document.getElementById(`card-${fotoId}`);
-                if (cardElement) {
-                    if (perms[role]) {
-                        cardElement.style.display = 'block';
-                    } else {
-                        cardElement.style.display = 'none';
+            profilesListContainer.innerHTML = '';
+            dropdownCategory.innerHTML = '';
+
+            for (const [catId, catData] of Object.entries(categories)) {
+                
+                // Opción para el panel admin
+                const option = document.createElement('option');
+                option.value = catId; option.innerText = catData.name;
+                dropdownCategory.appendChild(option);
+
+                // Comprobar si el usuario tiene permiso para ver ALGUNA foto en esta categoría
+                let hasVisiblePhotos = false;
+                if (currentUser.role === 'admin') {
+                    hasVisiblePhotos = true;
+                } else {
+                    for (const photoId in photos) {
+                        if (photos[photoId].categoryId === catId && photos[photoId].perms[currentUser.role]) {
+                            hasVisiblePhotos = true; break;
+                        }
                     }
+                }
+
+                if (hasVisiblePhotos) {
+                    // Crear tarjeta de portada
+                    const card = document.createElement('div');
+                    card.className = 'relative h-64 sm:h-80 rounded-xl overflow-hidden shadow-2xl cursor-pointer group';
+                    card.onclick = () => openProfileDetail(catId);
+                    
+                    card.innerHTML = `
+                        <img src="${catData.cover}" alt="${catData.name}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
+                        <div class="absolute bottom-6 left-6 flex items-center justify-between right-6">
+                            <h3 class="text-3xl cinematic-font font-bold text-white">${catData.name}</h3>
+                            <svg class="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        </div>
+                    `;
+                    profilesListContainer.appendChild(card);
+                }
+            }
+        }
+
+        function openProfileDetail(categoryId) {
+            const catData = categories[categoryId];
+            activeProfileTitle.innerText = catData.name;
+            activeProfilePhotos.innerHTML = ''; // Limpiar galería
+
+            // Añadir las fotos que pertenecen a este perfil
+            for (const [photoId, photoData] of Object.entries(photos)) {
+                if (photoData.categoryId === categoryId && photoData.perms[currentUser.role]) {
+                    const imgDiv = document.createElement('div');
+                    imgDiv.className = 'w-full bg-zinc-900 rounded-lg overflow-hidden shadow-2xl flex justify-center py-4 border border-white/5';
+                    // IMPORTANTE: object-contain para que la foto se vea COMPLETA
+                    imgDiv.innerHTML = `<img src="${photoData.url}" alt="Foto" class="w-full h-auto max-h-[85vh] object-contain" />`;
+                    activeProfilePhotos.appendChild(imgDiv);
                 }
             }
 
-            // 2. Ocultar la categoría entera si no queda ninguna foto visible (excepto para admin)
-            const categorias = ['comedia', 'drama', 'epoca'];
-            categorias.forEach(cat => {
-                const catContainer = document.getElementById(`category-${cat}`);
-                if (catContainer) {
-                    const fotosVisibles = catContainer.querySelectorAll('div[id^="card-"]:not([style*="display: none"])');
-                    if (fotosVisibles.length === 0 && role !== 'admin') {
-                        catContainer.style.display = 'none';
-                    } else {
-                        catContainer.style.display = 'block';
-                    }
-                }
-            });
+            profilesGridView.classList.add('hidden');
+            profileDetailView.classList.remove('hidden');
+        }
+
+        function closeProfileDetail() {
+            profileDetailView.classList.add('hidden');
+            profilesGridView.classList.remove('hidden');
+            activeProfilePhotos.innerHTML = '';
         }
 
         // ==========================================
-        // LÓGICA DE ADMINISTRADOR: SUBIR Y GESTIONAR
+        // LÓGICA DE ADMINISTRADOR
         // ==========================================
         
         function updateGuestHours() {
             const val = parseFloat(document.getElementById('guest-hours-input').value);
-            if (val > 0) {
-                guestAllowedHours = val;
-                localStorage.setItem('guestAllowedHours', guestAllowedHours);
-                showToast(`Acceso de invitados guardado.`);
-            }
+            if (val > 0) { guestAllowedHours = val; localStorage.setItem('guestAllowedHours', val); showToast(`Acceso guardado.`); }
         }
-
-        function resetGuestTimer() {
-            localStorage.removeItem('guestExpirationTime');
-            showToast("Contador de invitado reseteado con éxito.");
-        }
+        function resetGuestTimer() { localStorage.removeItem('guestExpirationTime'); showToast("Contador reseteado."); }
 
         function openAdmin() {
             document.getElementById('guest-hours-input').value = guestAllowedHours;
-            adminPanel.classList.remove('hidden');
-            adminPanel.classList.add('flex');
-            renderAdminPanel();
+            adminPanel.classList.remove('hidden'); adminPanel.classList.add('flex');
+            renderAdminPermissionsList();
         }
 
         function closeAdmin() {
-            adminPanel.classList.add('hidden');
-            adminPanel.classList.remove('flex');
-            applyPermissions(); 
+            adminPanel.classList.add('hidden'); adminPanel.classList.remove('flex');
+            renderProfiles(); // Actualiza la vista por si creó algún perfil
         }
 
-        function handleUpload() {
-            const category = document.getElementById('new-photo-category').value;
+        // 1. Modificar Foto Portada Hero
+        function handleHeroUpload() {
+            const fileInput = document.getElementById('new-hero-file');
+            if (!fileInput.files[0]) { alert('Selecciona una imagen.'); return; }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('hero-img').src = e.target.result;
+                fileInput.value = '';
+                showToast("Portada principal actualizada.");
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        }
+
+        // 2. Crear Nuevo Perfil (Carpeta)
+        function handleCreateProfile() {
+            const nameInput = document.getElementById('new-profile-name').value.trim();
+            const fileInput = document.getElementById('new-profile-cover');
+            
+            if (!nameInput || !fileInput.files[0]) { alert('Falta el nombre o la imagen de portada.'); return; }
+
+            const newCatId = nameInput.toLowerCase().replace(/[^a-z0-9]/g, '-');
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                categories[newCatId] = { id: newCatId, name: nameInput, cover: e.target.result };
+                
+                document.getElementById('new-profile-name').value = '';
+                fileInput.value = '';
+                
+                // Refrescar desplegable
+                renderProfiles();
+                showToast(`Perfil "${nameInput}" creado con éxito.`);
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        }
+
+        // 3. Añadir foto completa a un Perfil
+        function handleUploadPhoto() {
+            const categoryId = document.getElementById('new-photo-category').value;
             const fileInput = document.getElementById('new-photo-file');
             const permDirector = document.getElementById('perm-new-director').checked;
             const permInvitado = document.getElementById('perm-new-invitado').checked;
 
-            if (!fileInput.files[0]) {
-                alert('Por favor, selecciona una imagen.');
-                return;
-            }
+            if (!fileInput.files[0] || !categoryId) { alert('Selecciona un perfil y una imagen.'); return; }
 
-            // Generamos un ID seguro para la foto (Categoría + sufijo aleatorio)
-            const newId = category + '-' + Date.now().toString().slice(-4);
-            const file = fileInput.files[0];
+            const newPhotoId = 'p-' + Date.now().toString().slice(-5);
             const reader = new FileReader();
 
             reader.onload = function(e) {
-                const imageUrl = e.target.result;
-
-                // 1. Añadimos la foto y sus permisos al registro
-                photoPermissions[newId] = { 
-                    category: category,
-                    admin: true, 
-                    director: permDirector, 
-                    invitado: permInvitado 
+                photos[newPhotoId] = {
+                    categoryId: categoryId,
+                    url: e.target.result,
+                    perms: { admin: true, director: permDirector, invitado: permInvitado }
                 };
-
-                // 2. Insertamos la foto en el contenedor correcto de la galería
-                const photosContainer = document.getElementById(`photos-${category}`);
-                const newCard = document.createElement('div');
-                newCard.id = `card-${newId}`;
-                newCard.className = 'relative rounded-xl overflow-hidden shadow-2xl transition-all duration-300';
-                newCard.innerHTML = `<img src="${imageUrl}" alt="Foto ${category}" class="w-full h-auto max-h-[60vh] object-cover" />`;
-                
-                photosContainer.appendChild(newCard);
-
-                // 3. Limpiamos el formulario y actualizamos la interfaz
                 fileInput.value = '';
-                renderAdminPanel();
-                applyPermissions(); // Para reevaluar la visibilidad
-                
-                alert(`¡La imagen ha sido añadida a la categoría ${category.toUpperCase()} con éxito!`);
+                renderAdminPermissionsList();
+                showToast(`Fotografía añadida correctamente.`);
             };
-
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(fileInput.files[0]);
         }
 
-        function renderAdminPanel() {
-            adminPermsContainer.innerHTML = '';
-            const rolesAEvaluar = ['director', 'invitado']; 
+        // 4. Panel inferior de permisos
+        function renderAdminPermissionsList() {
+            const container = document.getElementById('admin-permissions-container');
+            container.innerHTML = '';
             
-            for (const [fotoId, data] of Object.entries(photoPermissions)) {
+            for (const [photoId, photoData] of Object.entries(photos)) {
+                const catName = categories[photoData.categoryId].name;
                 const block = document.createElement('div');
-                block.className = 'bg-zinc-900 border border-white/10 p-4 rounded-xl';
+                block.className = 'bg-zinc-900 border border-white/10 p-4 rounded-xl flex items-center justify-between';
                 
-                const title = document.createElement('h3');
-                title.className = 'text-xl font-semibold mb-3 capitalize text-white';
-                title.innerText = `Sección: ${data.category} (Foto ID: ${fotoId.split('-')[1]})`;
-                block.appendChild(title);
-
+                const info = document.createElement('div');
+                info.innerHTML = `<h3 class="text-white font-semibold mb-2">Dentro de: ${catName} <span class="text-xs text-gray-500 font-normal ml-2">(${photoId})</span></h3>`;
+                
                 const rolesDiv = document.createElement('div');
-                rolesDiv.className = 'flex flex-wrap gap-6 mt-2';
+                rolesDiv.className = 'flex gap-4';
 
-                rolesAEvaluar.forEach(role => {
+                ['director', 'invitado'].forEach(role => {
                     const label = document.createElement('label');
                     label.className = 'flex items-center space-x-2 cursor-pointer';
-                    
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
-                    checkbox.className = 'w-5 h-5 accent-zinc-500 rounded cursor-pointer';
-                    checkbox.checked = data[role];
-                    
-                    checkbox.onchange = (e) => {
-                        photoPermissions[fotoId][role] = e.target.checked;
-                    };
+                    checkbox.className = 'w-4 h-4 accent-zinc-500 rounded cursor-pointer';
+                    checkbox.checked = photoData.perms[role];
+                    checkbox.onchange = (e) => { photos[photoId].perms[role] = e.target.checked; };
 
-                    const span = document.createElement('span');
-                    span.className = 'text-sm text-gray-300 capitalize';
-                    span.innerText = role;
-
+                    label.innerHTML = ``;
                     label.appendChild(checkbox);
-                    label.appendChild(span);
+                    label.innerHTML += `<span class="text-sm text-gray-300 capitalize ml-2">${role}</span>`;
                     rolesDiv.appendChild(label);
                 });
 
-                block.appendChild(rolesDiv);
-                adminPermsContainer.appendChild(block);
+                info.appendChild(rolesDiv);
+                block.appendChild(info);
+                
+                // Miniatura
+                const thumb = document.createElement('img');
+                thumb.src = photoData.url;
+                thumb.className = "w-16 h-16 object-cover rounded-md border border-white/20 ml-4";
+                block.appendChild(thumb);
+
+                container.appendChild(block);
             }
         }
 
-        document.getElementById('password').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') handleLogin();
-        });
+        document.getElementById('password').addEventListener('keypress', function(e) { if (e.key === 'Enter') handleLogin(); });
 
         // ==========================================
         // SISTEMAS DE PROTECCIÓN Y ANTI-CAPTURA
         // ==========================================
 
-        document.addEventListener('contextmenu', e => {
-            e.preventDefault();
-            showToast("La descarga de imágenes no está permitida.");
-        });
-
-        // NUEVO: Evitar arrastrar imágenes
-        document.addEventListener('dragstart', e => {
-            if (e.target.tagName === 'IMG') {
-                e.preventDefault();
-            }
-        });
-
+        document.addEventListener('contextmenu', e => { e.preventDefault(); showToast("La descarga de imágenes no está permitida."); });
+        document.addEventListener('dragstart', e => { if (e.target.tagName === 'IMG') e.preventDefault(); });
         document.addEventListener('keydown', e => {
             if (e.key === 'PrintScreen' || (e.ctrlKey && e.key === 'p') || (e.metaKey && e.key === 'p') || (e.metaKey && e.shiftKey)) {
-                navigator.clipboard.writeText(''); 
-                showToast("Acción no permitida.");
+                navigator.clipboard.writeText(''); showToast("Acción no permitida.");
             }
         });
-        document.addEventListener('keyup', e => {
-            if (e.key === 'PrintScreen') navigator.clipboard.writeText('');
-        });
+        document.addEventListener('keyup', e => { if (e.key === 'PrintScreen') navigator.clipboard.writeText(''); });
 
         window.addEventListener('blur', () => {
             if (currentUser) {
@@ -645,7 +684,6 @@
                 document.getElementById('screenshot-overlay').style.display = 'flex';
             }
         });
-
         window.addEventListener('focus', () => {
             document.body.classList.remove('blur-content');
             document.getElementById('screenshot-overlay').style.display = 'none';

@@ -61,27 +61,25 @@
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
         }
 
-        .horizontal-scroll {
-            display: flex;
-            overflow-x: auto;
-            scroll-snap-type: x mandatory;
-            gap: 1rem;
-            padding-bottom: 1rem;
-        }
-        .horizontal-scroll > div {
-            scroll-snap-align: center;
-            flex: 0 0 85%;
+        /* --- NUEVO: Galería Vertical --- */
+        .vertical-gallery {
+            max-height: 75vh;
+            overflow-y: auto;
+            width: 100%;
+            padding-bottom: 2rem;
+            /* Scroll suave para la galería interna */
+            scroll-behavior: smooth; 
         }
 
-        /* --- NUEVO: Clases de Seguridad --- */
+        /* --- Clases de Seguridad --- */
         body {
-            -webkit-user-select: none; /* Evita seleccionar texto/imágenes */
+            -webkit-user-select: none;
             user-select: none;
-            -webkit-touch-callout: none; /* Evita menú contextual en iOS */
+            -webkit-touch-callout: none;
         }
         
         img {
-            pointer-events: none; /* Evita interacciones directas con la imagen (clic derecho, arrastrar) */
+            pointer-events: none;
         }
 
         #screenshot-overlay {
@@ -102,7 +100,6 @@
             filter: blur(20px) grayscale(100%);
             opacity: 0;
         }
-        /* -------------------------------- */
     </style>
 </head>
 <body class="antialiased selection:bg-white selection:text-black">
@@ -151,7 +148,7 @@
                 </button>
             </div>
             
-            <!-- NUEVO: CONFIGURACIÓN DE INVITADOS -->
+            <!-- CONFIGURACIÓN DE INVITADOS -->
             <div class="bg-zinc-800 border border-white/20 p-6 rounded-2xl mb-8 shadow-2xl">
                 <h3 class="text-xl cinematic-font mb-4 text-white">Configuración de Acceso</h3>
                 <label class="block text-sm text-gray-400 mb-2">Horas de acceso permitidas para Perfil Invitado:</label>
@@ -165,14 +162,20 @@
 
             <!-- FORMULARIO DE SUBIDA DE IMAGEN -->
             <div class="bg-zinc-800 border border-white/20 p-6 rounded-2xl mb-8 shadow-2xl">
-                <h3 class="text-xl cinematic-font mb-4 text-white">Subir Nuevo Perfil</h3>
+                <h3 class="text-xl cinematic-font mb-4 text-white">Añadir Fotografía a Perfil</h3>
                 <div class="space-y-4">
-                    <input type="text" id="new-photo-title" placeholder="Título (ej. Acción, Villana...)" class="w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-white transition-colors">
                     
-                    <input type="file" id="new-photo-file" accept="image/*" class="w-full text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black hover:file:bg-gray-200 cursor-pointer">
+                    <label class="block text-sm text-gray-400">Selecciona el perfil de destino:</label>
+                    <select id="new-photo-category" class="w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-white transition-colors">
+                        <option value="comedia">Comedia</option>
+                        <option value="drama">Drama</option>
+                        <option value="epoca">Época</option>
+                    </select>
+                    
+                    <input type="file" id="new-photo-file" accept="image/*" class="w-full mt-2 text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black hover:file:bg-gray-200 cursor-pointer">
                     
                     <div class="pt-2">
-                        <p class="text-sm text-gray-400 mb-2">¿Quién puede ver esta nueva imagen?</p>
+                        <p class="text-sm text-gray-400 mb-2">¿Qué roles podrán ver esta foto concreta?</p>
                         <div class="flex flex-wrap gap-6">
                             <label class="flex items-center space-x-2 cursor-pointer">
                                 <input type="checkbox" id="perm-new-director" checked class="w-5 h-5 accent-zinc-500 rounded cursor-pointer"> 
@@ -191,7 +194,7 @@
                 </div>
             </div>
 
-            <h3 class="text-xl cinematic-font mb-4 text-white border-b border-white/20 pb-2">Gestionar Permisos Actuales</h3>
+            <h3 class="text-xl cinematic-font mb-4 text-white border-b border-white/20 pb-2">Gestionar Permisos de Fotos Actuales</h3>
             <div id="admin-permissions-container" class="space-y-4">
                 <!-- Se llena dinámicamente con JS -->
             </div>
@@ -203,7 +206,7 @@
         ⚙️ Panel Admin
     </button>
 
-    <!-- NUEVO: CONTADOR DE INVITADO -->
+    <!-- CONTADOR DE INVITADO -->
     <div id="guest-timer-display" class="fixed top-6 right-6 bg-black/80 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-full font-semibold shadow-lg z-40 hidden flex items-center space-x-2">
         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         <span id="time-remaining" class="tracking-wider">00:00:00</span>
@@ -251,42 +254,43 @@
             </div>
         </section>
 
-        <!-- SECCIÓN 3: VERSATILIDAD (GALERÍA) -->
-        <section class="snap-section bg-zinc-900 flex flex-col justify-center py-12">
-            <div class="px-6 mb-8 reveal">
+        <!-- SECCIÓN 3: VERSATILIDAD (GALERÍA VERTICAL) -->
+        <section class="snap-section bg-zinc-900 flex flex-col pt-16 pb-8">
+            <div class="px-6 mb-6 reveal">
                 <h2 class="text-3xl cinematic-font text-white mb-2">Perfiles</h2>
                 <div class="w-12 h-[1px] bg-white"></div>
             </div>
 
-            <div id="gallery-container" class="horizontal-scroll px-6 w-full reveal" style="transition-delay: 200ms;">
+            <!-- Contenedor con scroll vertical para las fotos y categorías -->
+            <div id="gallery-container" class="vertical-gallery px-6 reveal" style="transition-delay: 200ms;">
                 
-                <!-- Tarjeta 1 -->
-                <div id="card-comedia" class="relative h-[60vh] rounded-xl overflow-hidden shadow-2xl transition-all duration-300">
-                    <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=600&q=80" alt="Comedia" class="w-full h-full object-cover" />
-                    <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
-                    <div class="absolute bottom-6 left-6">
-                        <h3 class="text-2xl cinematic-font font-bold">Comedia</h3>
-                        <p class="text-sm text-gray-300">Naturalidad y ritmo</p>
+                <!-- Categoría: Comedia -->
+                <div id="category-comedia" class="mb-12">
+                    <h3 class="text-2xl cinematic-font font-bold mb-4 text-white border-b border-white/20 pb-2">Comedia</h3>
+                    <div id="photos-comedia" class="space-y-6">
+                        <div id="card-comedia-1" class="relative rounded-xl overflow-hidden shadow-2xl">
+                            <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=600&q=80" alt="Comedia" class="w-full h-auto max-h-[60vh] object-cover" />
+                        </div>
                     </div>
                 </div>
 
-                <!-- Tarjeta 2 -->
-                <div id="card-drama" class="relative h-[60vh] rounded-xl overflow-hidden shadow-2xl transition-all duration-300">
-                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80" alt="Drama" class="w-full h-full object-cover" />
-                    <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
-                    <div class="absolute bottom-6 left-6">
-                        <h3 class="text-2xl cinematic-font font-bold">Drama</h3>
-                        <p class="text-sm text-gray-300">Profundidad emocional</p>
+                <!-- Categoría: Drama -->
+                <div id="category-drama" class="mb-12">
+                    <h3 class="text-2xl cinematic-font font-bold mb-4 text-white border-b border-white/20 pb-2">Drama</h3>
+                    <div id="photos-drama" class="space-y-6">
+                        <div id="card-drama-1" class="relative rounded-xl overflow-hidden shadow-2xl">
+                            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80" alt="Drama" class="w-full h-auto max-h-[60vh] object-cover" />
+                        </div>
                     </div>
                 </div>
 
-                <!-- Tarjeta 3 -->
-                <div id="card-epoca" class="relative h-[60vh] rounded-xl overflow-hidden shadow-2xl transition-all duration-300">
-                    <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80" alt="Época" class="w-full h-full object-cover" />
-                    <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
-                    <div class="absolute bottom-6 left-6">
-                        <h3 class="text-2xl cinematic-font font-bold">Época</h3>
-                        <p class="text-sm text-gray-300">Adaptabilidad clásica</p>
+                <!-- Categoría: Época -->
+                <div id="category-epoca" class="mb-12">
+                    <h3 class="text-2xl cinematic-font font-bold mb-4 text-white border-b border-white/20 pb-2">Época</h3>
+                    <div id="photos-epoca" class="space-y-6">
+                        <div id="card-epoca-1" class="relative rounded-xl overflow-hidden shadow-2xl">
+                            <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80" alt="Época" class="w-full h-auto max-h-[60vh] object-cover" />
+                        </div>
                     </div>
                 </div>
 
@@ -347,20 +351,16 @@
             'invitado': { pass: 'hola', role: 'invitado', name: 'Usuario General' }
         };
 
+        // Permisos ahora asignados individualmente por fotografía, atados a su categoría
         let photoPermissions = {
-            'comedia': { admin: true, director: true, invitado: true },
-            'drama':   { admin: true, director: true, invitado: false }, 
-            'epoca':   { admin: true, director: true, invitado: true }
+            'comedia-1': { category: 'comedia', admin: true, director: true, invitado: true },
+            'drama-1':   { category: 'drama', admin: true, director: true, invitado: false }, 
+            'epoca-1':   { category: 'epoca', admin: true, director: true, invitado: true }
         };
 
         let currentUser = null;
         let guestAllowedHours = localStorage.getItem('guestAllowedHours') ? parseFloat(localStorage.getItem('guestAllowedHours')) : 1; 
         let guestTimerInterval = null;
-        const cards = {
-            'comedia': document.getElementById('card-comedia'),
-            'drama': document.getElementById('card-drama'),
-            'epoca': document.getElementById('card-epoca')
-        };
 
         const loginView = document.getElementById('login-view');
         const mainContainer = document.getElementById('main-container');
@@ -397,7 +397,6 @@
                     let expirationTime = localStorage.getItem('guestExpirationTime');
                     
                     if (!expirationTime) {
-                        // Si no hay registro, calcula la fecha de caducidad fijada
                         expirationTime = Date.now() + (guestAllowedHours * 3600000);
                         localStorage.setItem('guestExpirationTime', expirationTime);
                     }
@@ -406,7 +405,7 @@
                         loginError.innerText = "Tu tiempo de acceso ha expirado. Contacta con administración.";
                         loginError.classList.remove('hidden');
                         currentUser = null;
-                        return; // Aborta el login
+                        return;
                     }
                     
                     startGuestTimer(expirationTime);
@@ -442,7 +441,6 @@
             adminPanel.classList.remove('flex');
         }
 
-        // Lógica del contador para invitados
         function startGuestTimer(endTime) {
             guestTimerDisplay.classList.remove('hidden');
             
@@ -464,13 +462,32 @@
         function applyPermissions() {
             if (!currentUser) return;
             const role = currentUser.role;
-            for (const [fotoId, cardElement] of Object.entries(cards)) {
-                if (photoPermissions[fotoId] && photoPermissions[fotoId][role]) {
-                    cardElement.style.display = 'block';
-                } else {
-                    cardElement.style.display = 'none';
+            
+            // 1. Mostrar/Ocultar fotos individuales
+            for (const [fotoId, perms] of Object.entries(photoPermissions)) {
+                const cardElement = document.getElementById(`card-${fotoId}`);
+                if (cardElement) {
+                    if (perms[role]) {
+                        cardElement.style.display = 'block';
+                    } else {
+                        cardElement.style.display = 'none';
+                    }
                 }
             }
+
+            // 2. Ocultar la categoría entera si no queda ninguna foto visible (excepto para admin)
+            const categorias = ['comedia', 'drama', 'epoca'];
+            categorias.forEach(cat => {
+                const catContainer = document.getElementById(`category-${cat}`);
+                if (catContainer) {
+                    const fotosVisibles = catContainer.querySelectorAll('div[id^="card-"]:not([style*="display: none"])');
+                    if (fotosVisibles.length === 0 && role !== 'admin') {
+                        catContainer.style.display = 'none';
+                    } else {
+                        catContainer.style.display = 'block';
+                    }
+                }
+            });
         }
 
         // ==========================================
@@ -482,13 +499,13 @@
             if (val > 0) {
                 guestAllowedHours = val;
                 localStorage.setItem('guestAllowedHours', guestAllowedHours);
-                showToast(`Acceso de invitados guardado. (No afecta a sesiones ya iniciadas)`);
+                showToast(`Acceso de invitados guardado.`);
             }
         }
 
         function resetGuestTimer() {
             localStorage.removeItem('guestExpirationTime');
-            showToast("Contador de invitado reseteado con éxito. Pueden volver a entrar.");
+            showToast("Contador de invitado reseteado con éxito.");
         }
 
         function openAdmin() {
@@ -504,78 +521,64 @@
             applyPermissions(); 
         }
 
-        // Lógica para procesar la subida de una nueva imagen
         function handleUpload() {
-            const titleInput = document.getElementById('new-photo-title').value.trim();
+            const category = document.getElementById('new-photo-category').value;
             const fileInput = document.getElementById('new-photo-file');
             const permDirector = document.getElementById('perm-new-director').checked;
             const permInvitado = document.getElementById('perm-new-invitado').checked;
 
-            if (!titleInput || !fileInput.files[0]) {
-                alert('Por favor, ingresa un título y selecciona una imagen.');
+            if (!fileInput.files[0]) {
+                alert('Por favor, selecciona una imagen.');
                 return;
             }
 
-            // Generamos un ID seguro para la foto basado en su título
-            const newId = titleInput.toLowerCase().replace(/[^a-z0-9]/g, '-');
+            // Generamos un ID seguro para la foto (Categoría + sufijo aleatorio)
+            const newId = category + '-' + Date.now().toString().slice(-4);
             const file = fileInput.files[0];
             const reader = new FileReader();
 
-            // Usamos FileReader para leer la imagen subida en el navegador
             reader.onload = function(e) {
                 const imageUrl = e.target.result;
 
-                // 1. Añadimos los permisos al registro central
+                // 1. Añadimos la foto y sus permisos al registro
                 photoPermissions[newId] = { 
+                    category: category,
                     admin: true, 
                     director: permDirector, 
                     invitado: permInvitado 
                 };
 
-                // 2. Creamos el HTML de la nueva tarjeta fotográfica
-                const galleryContainer = document.getElementById('gallery-container');
+                // 2. Insertamos la foto en el contenedor correcto de la galería
+                const photosContainer = document.getElementById(`photos-${category}`);
                 const newCard = document.createElement('div');
                 newCard.id = `card-${newId}`;
-                newCard.className = 'relative h-[60vh] rounded-xl overflow-hidden shadow-2xl transition-all duration-300';
-                newCard.innerHTML = `
-                    <img src="${imageUrl}" alt="${titleInput}" class="w-full h-full object-cover" />
-                    <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
-                    <div class="absolute bottom-6 left-6">
-                        <h3 class="text-2xl cinematic-font font-bold">${titleInput}</h3>
-                        <p class="text-sm text-gray-300">Nueva subida</p>
-                    </div>
-                `;
+                newCard.className = 'relative rounded-xl overflow-hidden shadow-2xl transition-all duration-300';
+                newCard.innerHTML = `<img src="${imageUrl}" alt="Foto ${category}" class="w-full h-auto max-h-[60vh] object-cover" />`;
                 
-                // 3. Insertamos la tarjeta en la galería y la registramos
-                galleryContainer.appendChild(newCard);
-                cards[newId] = newCard;
+                photosContainer.appendChild(newCard);
 
-                // 4. Limpiamos el formulario
-                document.getElementById('new-photo-title').value = '';
+                // 3. Limpiamos el formulario y actualizamos la interfaz
                 fileInput.value = '';
-
-                // 5. Refrescamos la lista de abajo en el panel admin para que aparezca la nueva foto
                 renderAdminPanel();
+                applyPermissions(); // Para reevaluar la visibilidad
                 
-                // Usamos un botón para informar en vez de alert() intrusivo en el futuro, por ahora feedback simple
-                alert(`¡La imagen "${titleInput}" ha sido subida y añadida a la galería con éxito!`);
+                alert(`¡La imagen ha sido añadida a la categoría ${category.toUpperCase()} con éxito!`);
             };
 
             reader.readAsDataURL(file);
         }
 
-        // Renderiza los checkboxes de gestión inferior del admin panel
         function renderAdminPanel() {
             adminPermsContainer.innerHTML = '';
             const rolesAEvaluar = ['director', 'invitado']; 
             
-            for (const [fotoId, perms] of Object.entries(photoPermissions)) {
+            for (const [fotoId, data] of Object.entries(photoPermissions)) {
                 const block = document.createElement('div');
                 block.className = 'bg-zinc-900 border border-white/10 p-4 rounded-xl';
                 
                 const title = document.createElement('h3');
                 title.className = 'text-xl font-semibold mb-3 capitalize text-white';
-                title.innerText = `Foto: ${fotoId.replace(/-/g, ' ')}`;
+                title.innerText = `Sección: ${data.category} (Foto ID: ${fotoId.split('-')[1]})`;
                 block.appendChild(title);
 
                 const rolesDiv = document.createElement('div');
@@ -588,7 +591,7 @@
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.className = 'w-5 h-5 accent-zinc-500 rounded cursor-pointer';
-                    checkbox.checked = perms[role];
+                    checkbox.checked = data[role];
                     
                     checkbox.onchange = (e) => {
                         photoPermissions[fotoId][role] = e.target.checked;
@@ -616,16 +619,14 @@
         // SISTEMAS DE PROTECCIÓN Y ANTI-CAPTURA
         // ==========================================
 
-        // 1. Bloquear click derecho en toda la página
         document.addEventListener('contextmenu', e => {
             e.preventDefault();
             showToast("La descarga de imágenes no está permitida.");
         });
 
-        // 2. Bloquear teclas de atajos de captura/impresión (PrintScreen, Ctrl+P)
         document.addEventListener('keydown', e => {
             if (e.key === 'PrintScreen' || (e.ctrlKey && e.key === 'p') || (e.metaKey && e.key === 'p') || (e.metaKey && e.shiftKey)) {
-                navigator.clipboard.writeText(''); // Intenta limpiar el portapapeles
+                navigator.clipboard.writeText(''); 
                 showToast("Acción no permitida.");
             }
         });
@@ -633,7 +634,6 @@
             if (e.key === 'PrintScreen') navigator.clipboard.writeText('');
         });
 
-        // 3. Mitigación contra herramientas de recorte (blur cuando se pierde el foco de la ventana)
         window.addEventListener('blur', () => {
             if (currentUser) {
                 document.body.classList.add('blur-content');

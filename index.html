@@ -149,6 +149,16 @@
                 </button>
             </div>
             
+            <!-- MODIFICAR IMAGEN INTERACTIVA -->
+            <div class="bg-zinc-800 border border-white/20 p-6 rounded-2xl mb-8 shadow-2xl">
+                <h3 class="text-xl cinematic-font mb-4 text-white">Modificar Imagen Interactiva</h3>
+                <p class="text-sm text-gray-400 mb-4">Esta es la imagen de la sección "Mantén pulsado". El efecto dramático se aplicará solo.</p>
+                <input type="file" id="new-interactive-file" accept="image/*" class="w-full text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black hover:file:bg-gray-200 cursor-pointer">
+                <button onclick="handleInteractiveUpload()" class="w-full mt-4 bg-zinc-700 text-white font-semibold py-3 rounded-lg hover:bg-zinc-600 transition-colors">
+                    Actualizar Imagen
+                </button>
+            </div>
+
             <!-- CREAR NUEVO PERFIL (CATEGORÍA) -->
             <div class="bg-zinc-800 border border-white/20 p-6 rounded-2xl mb-8 shadow-2xl">
                 <h3 class="text-xl cinematic-font mb-4 text-white">Crear Nuevo Perfil (Categoría)</h3>
@@ -279,18 +289,20 @@
                 </div>
             </div>
 
-            <!-- CONTENEDOR 2: FOTOS DENTRO DE UN PERFIL -->
-            <div id="profile-detail-view" class="hidden flex flex-col h-full bg-black absolute inset-0 z-20 pt-16 pb-8">
-                <div class="px-6 mb-6 flex items-center justify-between">
-                    <div>
-                        <button onclick="closeProfileDetail()" class="text-gray-400 hover:text-white flex items-center gap-2 mb-2 transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                            Volver a Perfiles
-                        </button>
-                        <h2 id="active-profile-title" class="text-3xl cinematic-font text-white">Nombre Perfil</h2>
-                    </div>
+            <!-- CONTENEDOR 2: FOTOS DENTRO DE UN PERFIL (MODAL FIJO) -->
+            <div id="profile-detail-view" class="hidden flex flex-col fixed inset-0 bg-black z-50 pt-12 pb-0">
+                
+                <!-- BOTÓN VOLVER FLOTANTE (SIEMPRE VISIBLE) -->
+                <button onclick="closeProfileDetail()" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-zinc-800/90 backdrop-blur-md border border-white/20 text-white px-6 py-3 rounded-full font-semibold shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-[60] flex items-center gap-2 hover:bg-zinc-700 transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    Volver a Perfiles
+                </button>
+
+                <div class="px-6 mb-4 text-center shrink-0">
+                    <h2 id="active-profile-title" class="text-3xl cinematic-font text-white">Nombre Perfil</h2>
                 </div>
-                <div id="active-profile-photos" class="vertical-gallery px-6 space-y-8">
+                
+                <div id="active-profile-photos" class="flex-1 overflow-y-auto px-6 space-y-8 pb-28" style="scroll-behavior: smooth;">
                     <!-- Fotos completas dinámicas -->
                 </div>
             </div>
@@ -571,6 +583,19 @@
             reader.readAsDataURL(fileInput.files[0]);
         }
 
+        // 1.5 Modificar Foto Interactiva
+        function handleInteractiveUpload() {
+            const fileInput = document.getElementById('new-interactive-file');
+            if (!fileInput.files[0]) { alert('Selecciona una imagen.'); return; }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('interactive-portrait').src = e.target.result;
+                fileInput.value = '';
+                showToast("Imagen interactiva actualizada.");
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        }
+
         // 2. Crear Nuevo Perfil (Carpeta)
         function handleCreateProfile() {
             const nameInput = document.getElementById('new-profile-name').value.trim();
@@ -653,13 +678,34 @@
                 info.appendChild(rolesDiv);
                 block.appendChild(info);
                 
-                // Miniatura
+                // Lado derecho: Miniatura y Botón Eliminar
+                const rightSide = document.createElement('div');
+                rightSide.className = "flex flex-col items-center ml-4 gap-3 shrink-0";
+
                 const thumb = document.createElement('img');
                 thumb.src = photoData.url;
-                thumb.className = "w-16 h-16 object-cover rounded-md border border-white/20 ml-4";
-                block.appendChild(thumb);
+                thumb.className = "w-16 h-16 object-cover rounded-md border border-white/20";
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = "text-xs text-red-500 hover:text-red-400 flex items-center gap-1 transition-colors";
+                deleteBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Eliminar`;
+                deleteBtn.onclick = () => deletePhoto(photoId);
+
+                rightSide.appendChild(thumb);
+                rightSide.appendChild(deleteBtn);
+
+                block.appendChild(rightSide);
 
                 container.appendChild(block);
+            }
+        }
+
+        // NUEVO: Función para eliminar fotos del registro
+        function deletePhoto(photoId) {
+            if (confirm("¿Estás seguro de que deseas eliminar esta fotografía? Esta acción no se puede deshacer.")) {
+                delete photos[photoId]; // Elimina la foto de la memoria
+                renderAdminPermissionsList(); // Refresca la lista del panel
+                showToast("Fotografía eliminada correctamente.");
             }
         }
 

@@ -1,1 +1,651 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Elena Rojas | Actriz - Web Book</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        ::-webkit-scrollbar {
+            display: none;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #050505;
+            color: #ffffff;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        h1, h2, h3, .cinematic-font {
+            font-family: 'Playfair Display', serif;
+        }
+        
+        .snap-container {
+            height: 100vh;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+        }
+        .snap-section {
+            height: 100vh;
+            scroll-snap-align: start;
+            position: relative;
+            overflow: hidden;
+        }
 
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 1s cubic-bezier(0.5, 0, 0, 1);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #interactive-portrait {
+            transition: filter 0.5s ease, transform 0.5s ease;
+            filter: grayscale(100%) brightness(0.6);
+        }
+        .holding #interactive-portrait {
+            filter: grayscale(0%) brightness(1.1);
+            transform: scale(1.05);
+        }
+        
+        .pulse-ring {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 15px rgba(255, 255, 255, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
+
+        .horizontal-scroll {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            gap: 1rem;
+            padding-bottom: 1rem;
+        }
+        .horizontal-scroll > div {
+            scroll-snap-align: center;
+            flex: 0 0 85%;
+        }
+
+        /* --- NUEVO: Clases de Seguridad --- */
+        body {
+            -webkit-user-select: none; /* Evita seleccionar texto/imágenes */
+            user-select: none;
+            -webkit-touch-callout: none; /* Evita menú contextual en iOS */
+        }
+        
+        img {
+            pointer-events: none; /* Evita interacciones directas con la imagen (clic derecho, arrastrar) */
+        }
+
+        #screenshot-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 99999;
+            color: #444;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 1.2rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .blur-content #main-container {
+            filter: blur(20px) grayscale(100%);
+            opacity: 0;
+        }
+        /* -------------------------------- */
+    </style>
+</head>
+<body class="antialiased selection:bg-white selection:text-black">
+
+    <!-- PANTALLA ANTI-CAPTURA -->
+    <div id="screenshot-overlay">
+        <p>Contenido Protegido.<br><span class="text-sm">Las capturas de pantalla están deshabilitadas.</span></p>
+    </div>
+
+    <!-- TOAST DE NOTIFICACIONES -->
+    <div id="toast" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-white text-black px-6 py-3 rounded-full shadow-2xl z-[9999] opacity-0 transition-opacity duration-300 pointer-events-none hidden">
+        <span id="toast-msg" class="font-semibold text-sm"></span>
+    </div>
+
+    <!-- PANTALLA DE LOGIN -->
+    <div id="login-view" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-95 backdrop-blur-sm">
+        <div class="w-full max-w-sm p-8 bg-zinc-900 rounded-2xl border border-white/10 text-center mx-4">
+            <h2 class="text-3xl cinematic-font mb-2">Acceso Privado</h2>
+            <p class="text-sm text-gray-400 mb-6">Introduce tus credenciales para ver el book</p>
+            
+            <input type="text" id="username" placeholder="Usuario" class="w-full bg-black border border-white/20 rounded-lg px-4 py-3 mb-4 text-white placeholder-gray-500 focus:outline-none focus:border-white transition-colors">
+            <input type="password" id="password" placeholder="Contraseña" class="w-full bg-black border border-white/20 rounded-lg px-4 py-3 mb-6 text-white placeholder-gray-500 focus:outline-none focus:border-white transition-colors">
+            
+            <p id="login-error" class="text-red-500 text-sm mb-4 hidden">Credenciales incorrectas</p>
+            
+            <button onclick="handleLogin()" class="w-full bg-white text-black font-semibold py-3 rounded-lg hover:bg-gray-200 transition-colors">
+                Entrar
+            </button>
+            
+            <div class="mt-6 text-xs text-gray-500 text-left border-t border-white/10 pt-4">
+                <p class="mb-1">Cuentas de prueba:</p>
+                <p><b>admin</b> / admin123 (Administrador)</p>
+                <p><b>director</b> / casting (Director)</p>
+                <p><b>invitado</b> / hola (Invitado)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANEL DE ADMINISTRACIÓN -->
+    <div id="admin-panel" class="fixed inset-0 z-50 hidden flex-col bg-black/95 backdrop-blur-md overflow-y-auto">
+        <div class="p-6 max-w-2xl mx-auto w-full flex-grow mt-10">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl cinematic-font">Panel de Control</h2>
+                <button onclick="closeAdmin()" class="text-white hover:text-gray-400">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <!-- NUEVO: CONFIGURACIÓN DE INVITADOS -->
+            <div class="bg-zinc-800 border border-white/20 p-6 rounded-2xl mb-8 shadow-2xl">
+                <h3 class="text-xl cinematic-font mb-4 text-white">Configuración de Acceso</h3>
+                <label class="block text-sm text-gray-400 mb-2">Horas de acceso permitidas para Perfil Invitado:</label>
+                <div class="flex items-center space-x-4">
+                    <input type="number" id="guest-hours-input" value="1" min="0.1" step="0.1" class="w-24 bg-black border border-white/20 rounded-lg px-4 py-2 text-white text-center focus:outline-none focus:border-white">
+                    <span class="text-gray-300">hora(s)</span>
+                    <button onclick="updateGuestHours()" class="bg-zinc-700 text-white px-4 py-2 rounded-lg hover:bg-zinc-600 transition-colors text-sm">Guardar</button>
+                    <button onclick="resetGuestTimer()" class="bg-red-900/80 border border-red-500/50 text-white px-4 py-2 rounded-lg hover:bg-red-800 transition-colors text-sm">Resetear Acceso</button>
+                </div>
+            </div>
+
+            <!-- FORMULARIO DE SUBIDA DE IMAGEN -->
+            <div class="bg-zinc-800 border border-white/20 p-6 rounded-2xl mb-8 shadow-2xl">
+                <h3 class="text-xl cinematic-font mb-4 text-white">Subir Nuevo Perfil</h3>
+                <div class="space-y-4">
+                    <input type="text" id="new-photo-title" placeholder="Título (ej. Acción, Villana...)" class="w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-white transition-colors">
+                    
+                    <input type="file" id="new-photo-file" accept="image/*" class="w-full text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black hover:file:bg-gray-200 cursor-pointer">
+                    
+                    <div class="pt-2">
+                        <p class="text-sm text-gray-400 mb-2">¿Quién puede ver esta nueva imagen?</p>
+                        <div class="flex flex-wrap gap-6">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" id="perm-new-director" checked class="w-5 h-5 accent-zinc-500 rounded cursor-pointer"> 
+                                <span class="text-sm text-gray-300">Director de Casting</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" id="perm-new-invitado" checked class="w-5 h-5 accent-zinc-500 rounded cursor-pointer"> 
+                                <span class="text-sm text-gray-300">Invitado General</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button onclick="handleUpload()" class="w-full mt-4 bg-white text-black font-semibold py-3 rounded-lg hover:bg-gray-200 transition-colors">
+                        Subir y Publicar
+                    </button>
+                </div>
+            </div>
+
+            <h3 class="text-xl cinematic-font mb-4 text-white border-b border-white/20 pb-2">Gestionar Permisos Actuales</h3>
+            <div id="admin-permissions-container" class="space-y-4">
+                <!-- Se llena dinámicamente con JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTONES FLOTANTES SESIÓN -->
+    <button id="btn-open-admin" onclick="openAdmin()" class="fixed top-6 right-6 bg-zinc-800 border border-white/20 text-white px-4 py-2 rounded-full font-semibold shadow-lg z-40 hidden hover:bg-zinc-700 transition-colors">
+        ⚙️ Panel Admin
+    </button>
+
+    <!-- NUEVO: CONTADOR DE INVITADO -->
+    <div id="guest-timer-display" class="fixed top-6 right-6 bg-black/80 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-full font-semibold shadow-lg z-40 hidden flex items-center space-x-2">
+        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span id="time-remaining" class="tracking-wider">00:00:00</span>
+    </div>
+
+    <button id="btn-logout" onclick="handleLogout()" class="fixed top-6 left-6 bg-red-900/80 border border-red-500/50 text-white px-4 py-2 rounded-full text-sm shadow-lg z-40 hidden hover:bg-red-800 transition-colors">
+        Cerrar Sesión
+    </button>
+
+    <div class="snap-container hidden" id="main-container">
+
+        <!-- SECCIÓN 1: HERO CINEMÁTICO -->
+        <section class="snap-section flex flex-col justify-end pb-20 relative">
+            <div class="absolute inset-0 z-0">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80" alt="Retrato Actriz" class="w-full h-full object-cover object-center opacity-80" />
+                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+            </div>
+            
+            <div class="z-10 px-8 text-center reveal">
+                <p class="text-sm uppercase tracking-[0.3em] text-gray-300 mb-2">Actriz | Modelo</p>
+                <h1 class="text-5xl md:text-7xl font-bold cinematic-font mb-4">Elena<br>Rojas</h1>
+                <p class="font-light text-gray-400">Desliza para descubrir</p>
+                
+                <div class="mt-6 flex justify-center">
+                    <svg class="w-6 h-6 animate-bounce text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 2: INTERACTIVA -->
+        <section class="snap-section flex items-center justify-center relative bg-black" id="touch-section">
+            <img id="interactive-portrait" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1000&q=80" alt="Retrato Dramático" class="absolute inset-0 w-full h-full object-cover z-0" />
+            <div class="absolute inset-0 bg-black/30 z-0 transition-opacity duration-500" id="touch-overlay"></div>
+            
+            <div class="z-10 flex flex-col items-center justify-center text-center px-6 pointer-events-none">
+                <div id="touch-indicator" class="w-20 h-20 rounded-full border border-white/50 flex items-center justify-center pulse-ring mb-6 backdrop-blur-sm bg-black/20">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path>
+                    </svg>
+                </div>
+                <h2 class="text-3xl cinematic-font mb-2 touch-title transition-opacity duration-300">Mantén pulsado</h2>
+                <p class="text-sm text-gray-300 font-light touch-subtitle transition-opacity duration-300">Para ver la emoción</p>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 3: VERSATILIDAD (GALERÍA) -->
+        <section class="snap-section bg-zinc-900 flex flex-col justify-center py-12">
+            <div class="px-6 mb-8 reveal">
+                <h2 class="text-3xl cinematic-font text-white mb-2">Perfiles</h2>
+                <div class="w-12 h-[1px] bg-white"></div>
+            </div>
+
+            <div id="gallery-container" class="horizontal-scroll px-6 w-full reveal" style="transition-delay: 200ms;">
+                
+                <!-- Tarjeta 1 -->
+                <div id="card-comedia" class="relative h-[60vh] rounded-xl overflow-hidden shadow-2xl transition-all duration-300">
+                    <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=600&q=80" alt="Comedia" class="w-full h-full object-cover" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                    <div class="absolute bottom-6 left-6">
+                        <h3 class="text-2xl cinematic-font font-bold">Comedia</h3>
+                        <p class="text-sm text-gray-300">Naturalidad y ritmo</p>
+                    </div>
+                </div>
+
+                <!-- Tarjeta 2 -->
+                <div id="card-drama" class="relative h-[60vh] rounded-xl overflow-hidden shadow-2xl transition-all duration-300">
+                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80" alt="Drama" class="w-full h-full object-cover" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                    <div class="absolute bottom-6 left-6">
+                        <h3 class="text-2xl cinematic-font font-bold">Drama</h3>
+                        <p class="text-sm text-gray-300">Profundidad emocional</p>
+                    </div>
+                </div>
+
+                <!-- Tarjeta 3 -->
+                <div id="card-epoca" class="relative h-[60vh] rounded-xl overflow-hidden shadow-2xl transition-all duration-300">
+                    <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80" alt="Época" class="w-full h-full object-cover" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                    <div class="absolute bottom-6 left-6">
+                        <h3 class="text-2xl cinematic-font font-bold">Época</h3>
+                        <p class="text-sm text-gray-300">Adaptabilidad clásica</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SECCIÓN 4: FICHA TÉCNICA Y MEDIDAS -->
+        <section class="snap-section bg-black flex flex-col items-center justify-center px-8 relative">
+            <div class="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1200&q=80')] bg-cover bg-center"></div>
+            
+            <div class="z-10 w-full max-w-md bg-zinc-900/80 backdrop-blur-md p-8 rounded-2xl border border-white/10 reveal">
+                <h2 class="text-3xl cinematic-font mb-6 text-center">Ficha Física</h2>
+                <div class="space-y-4 text-sm">
+                    <div class="flex justify-between border-b border-white/10 pb-2">
+                        <span class="text-gray-400">Altura</span>
+                        <span class="font-semibold">1.72m</span>
+                    </div>
+                    <div class="flex justify-between border-b border-white/10 pb-2">
+                        <span class="text-gray-400">Ojos</span>
+                        <span class="font-semibold">Marrón Intenso</span>
+                    </div>
+                    <div class="flex justify-between pb-2">
+                        <span class="text-gray-400">Cabello</span>
+                        <span class="font-semibold">Castaño Oscuro</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Animaciones Reveal
+        const revealElements = document.querySelectorAll('.reveal');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) entry.target.classList.add('active');
+            });
+        }, { threshold: 0.1 });
+        revealElements.forEach(el => observer.observe(el));
+
+        // Eventos Hold to Reveal
+        const touchSection = document.getElementById('touch-section');
+        function startInteraction() { touchSection.classList.add('holding'); document.querySelector('.touch-title').style.opacity='0'; document.querySelector('.touch-subtitle').style.opacity='0'; document.getElementById('touch-indicator').style.opacity='0'; document.getElementById('touch-overlay').style.opacity='0'; }
+        function endInteraction() { touchSection.classList.remove('holding'); document.querySelector('.touch-title').style.opacity='1'; document.querySelector('.touch-subtitle').style.opacity='1'; document.getElementById('touch-indicator').style.opacity='1'; document.getElementById('touch-overlay').style.opacity='1'; }
+        
+        touchSection.addEventListener('touchstart', startInteraction, {passive: true});
+        touchSection.addEventListener('touchend', endInteraction);
+        touchSection.addEventListener('mousedown', startInteraction);
+        touchSection.addEventListener('mouseup', endInteraction);
+        touchSection.addEventListener('mouseleave', endInteraction);
+
+        // ==========================================
+        // SISTEMA DE AUTENTICACIÓN Y ROLES
+        // ==========================================
+        const mockUsers = {
+            'admin': { pass: 'admin123', role: 'admin', name: 'Administrador' },
+            'director': { pass: 'casting', role: 'director', name: 'Director de Casting' },
+            'invitado': { pass: 'hola', role: 'invitado', name: 'Usuario General' }
+        };
+
+        let photoPermissions = {
+            'comedia': { admin: true, director: true, invitado: true },
+            'drama':   { admin: true, director: true, invitado: false }, 
+            'epoca':   { admin: true, director: true, invitado: true }
+        };
+
+        let currentUser = null;
+        let guestAllowedHours = localStorage.getItem('guestAllowedHours') ? parseFloat(localStorage.getItem('guestAllowedHours')) : 1; 
+        let guestTimerInterval = null;
+        const cards = {
+            'comedia': document.getElementById('card-comedia'),
+            'drama': document.getElementById('card-drama'),
+            'epoca': document.getElementById('card-epoca')
+        };
+
+        const loginView = document.getElementById('login-view');
+        const mainContainer = document.getElementById('main-container');
+        const loginError = document.getElementById('login-error');
+        const btnLogout = document.getElementById('btn-logout');
+        const btnOpenAdmin = document.getElementById('btn-open-admin');
+        const adminPanel = document.getElementById('admin-panel');
+        const adminPermsContainer = document.getElementById('admin-permissions-container');
+        const guestTimerDisplay = document.getElementById('guest-timer-display');
+        const timeRemainingText = document.getElementById('time-remaining');
+
+        // Función para mostrar mensajes (Toast)
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.remove('opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            }, 3000);
+        }
+
+        function handleLogin() {
+            const userIn = document.getElementById('username').value.trim().toLowerCase();
+            const passIn = document.getElementById('password').value;
+
+            if (mockUsers[userIn] && mockUsers[userIn].pass === passIn) {
+                currentUser = mockUsers[userIn];
+                loginError.classList.add('hidden');
+                
+                // Lógica de Persistencia para Invitados
+                if (currentUser.role === 'invitado') {
+                    let expirationTime = localStorage.getItem('guestExpirationTime');
+                    
+                    if (!expirationTime) {
+                        // Si no hay registro, calcula la fecha de caducidad fijada
+                        expirationTime = Date.now() + (guestAllowedHours * 3600000);
+                        localStorage.setItem('guestExpirationTime', expirationTime);
+                    }
+                    
+                    if (Date.now() >= expirationTime) {
+                        loginError.innerText = "Tu tiempo de acceso ha expirado. Contacta con administración.";
+                        loginError.classList.remove('hidden');
+                        currentUser = null;
+                        return; // Aborta el login
+                    }
+                    
+                    startGuestTimer(expirationTime);
+                }
+
+                loginView.classList.add('hidden');
+                mainContainer.classList.remove('hidden');
+                btnLogout.classList.remove('hidden');
+
+                if (currentUser.role === 'admin') {
+                    btnOpenAdmin.classList.remove('hidden');
+                }
+                applyPermissions();
+            } else {
+                loginError.innerText = "Credenciales incorrectas";
+                loginError.classList.remove('hidden');
+            }
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            
+            if (guestTimerInterval) clearInterval(guestTimerInterval);
+            guestTimerDisplay.classList.add('hidden');
+
+            loginView.classList.remove('hidden');
+            mainContainer.classList.add('hidden');
+            btnLogout.classList.add('hidden');
+            btnOpenAdmin.classList.add('hidden');
+            adminPanel.classList.add('hidden');
+            adminPanel.classList.remove('flex');
+        }
+
+        // Lógica del contador para invitados
+        function startGuestTimer(endTime) {
+            guestTimerDisplay.classList.remove('hidden');
+            
+            guestTimerInterval = setInterval(() => {
+                const diff = endTime - Date.now();
+                if (diff <= 0) {
+                    handleLogout();
+                    showToast("Tu tiempo de acceso ha finalizado.");
+                    clearInterval(guestTimerInterval);
+                } else {
+                    const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
+                    const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
+                    const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+                    timeRemainingText.innerText = `${h}:${m}:${s}`;
+                }
+            }, 1000);
+        }
+
+        function applyPermissions() {
+            if (!currentUser) return;
+            const role = currentUser.role;
+            for (const [fotoId, cardElement] of Object.entries(cards)) {
+                if (photoPermissions[fotoId] && photoPermissions[fotoId][role]) {
+                    cardElement.style.display = 'block';
+                } else {
+                    cardElement.style.display = 'none';
+                }
+            }
+        }
+
+        // ==========================================
+        // LÓGICA DE ADMINISTRADOR: SUBIR Y GESTIONAR
+        // ==========================================
+        
+        function updateGuestHours() {
+            const val = parseFloat(document.getElementById('guest-hours-input').value);
+            if (val > 0) {
+                guestAllowedHours = val;
+                localStorage.setItem('guestAllowedHours', guestAllowedHours);
+                showToast(`Acceso de invitados guardado. (No afecta a sesiones ya iniciadas)`);
+            }
+        }
+
+        function resetGuestTimer() {
+            localStorage.removeItem('guestExpirationTime');
+            showToast("Contador de invitado reseteado con éxito. Pueden volver a entrar.");
+        }
+
+        function openAdmin() {
+            document.getElementById('guest-hours-input').value = guestAllowedHours;
+            adminPanel.classList.remove('hidden');
+            adminPanel.classList.add('flex');
+            renderAdminPanel();
+        }
+
+        function closeAdmin() {
+            adminPanel.classList.add('hidden');
+            adminPanel.classList.remove('flex');
+            applyPermissions(); 
+        }
+
+        // Lógica para procesar la subida de una nueva imagen
+        function handleUpload() {
+            const titleInput = document.getElementById('new-photo-title').value.trim();
+            const fileInput = document.getElementById('new-photo-file');
+            const permDirector = document.getElementById('perm-new-director').checked;
+            const permInvitado = document.getElementById('perm-new-invitado').checked;
+
+            if (!titleInput || !fileInput.files[0]) {
+                alert('Por favor, ingresa un título y selecciona una imagen.');
+                return;
+            }
+
+            // Generamos un ID seguro para la foto basado en su título
+            const newId = titleInput.toLowerCase().replace(/[^a-z0-9]/g, '-');
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            // Usamos FileReader para leer la imagen subida en el navegador
+            reader.onload = function(e) {
+                const imageUrl = e.target.result;
+
+                // 1. Añadimos los permisos al registro central
+                photoPermissions[newId] = { 
+                    admin: true, 
+                    director: permDirector, 
+                    invitado: permInvitado 
+                };
+
+                // 2. Creamos el HTML de la nueva tarjeta fotográfica
+                const galleryContainer = document.getElementById('gallery-container');
+                const newCard = document.createElement('div');
+                newCard.id = `card-${newId}`;
+                newCard.className = 'relative h-[60vh] rounded-xl overflow-hidden shadow-2xl transition-all duration-300';
+                newCard.innerHTML = `
+                    <img src="${imageUrl}" alt="${titleInput}" class="w-full h-full object-cover" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                    <div class="absolute bottom-6 left-6">
+                        <h3 class="text-2xl cinematic-font font-bold">${titleInput}</h3>
+                        <p class="text-sm text-gray-300">Nueva subida</p>
+                    </div>
+                `;
+                
+                // 3. Insertamos la tarjeta en la galería y la registramos
+                galleryContainer.appendChild(newCard);
+                cards[newId] = newCard;
+
+                // 4. Limpiamos el formulario
+                document.getElementById('new-photo-title').value = '';
+                fileInput.value = '';
+
+                // 5. Refrescamos la lista de abajo en el panel admin para que aparezca la nueva foto
+                renderAdminPanel();
+                
+                // Usamos un botón para informar en vez de alert() intrusivo en el futuro, por ahora feedback simple
+                alert(`¡La imagen "${titleInput}" ha sido subida y añadida a la galería con éxito!`);
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        // Renderiza los checkboxes de gestión inferior del admin panel
+        function renderAdminPanel() {
+            adminPermsContainer.innerHTML = '';
+            const rolesAEvaluar = ['director', 'invitado']; 
+            
+            for (const [fotoId, perms] of Object.entries(photoPermissions)) {
+                const block = document.createElement('div');
+                block.className = 'bg-zinc-900 border border-white/10 p-4 rounded-xl';
+                
+                const title = document.createElement('h3');
+                title.className = 'text-xl font-semibold mb-3 capitalize text-white';
+                title.innerText = `Foto: ${fotoId.replace(/-/g, ' ')}`;
+                block.appendChild(title);
+
+                const rolesDiv = document.createElement('div');
+                rolesDiv.className = 'flex flex-wrap gap-6 mt-2';
+
+                rolesAEvaluar.forEach(role => {
+                    const label = document.createElement('label');
+                    label.className = 'flex items-center space-x-2 cursor-pointer';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'w-5 h-5 accent-zinc-500 rounded cursor-pointer';
+                    checkbox.checked = perms[role];
+                    
+                    checkbox.onchange = (e) => {
+                        photoPermissions[fotoId][role] = e.target.checked;
+                    };
+
+                    const span = document.createElement('span');
+                    span.className = 'text-sm text-gray-300 capitalize';
+                    span.innerText = role;
+
+                    label.appendChild(checkbox);
+                    label.appendChild(span);
+                    rolesDiv.appendChild(label);
+                });
+
+                block.appendChild(rolesDiv);
+                adminPermsContainer.appendChild(block);
+            }
+        }
+
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') handleLogin();
+        });
+
+        // ==========================================
+        // SISTEMAS DE PROTECCIÓN Y ANTI-CAPTURA
+        // ==========================================
+
+        // 1. Bloquear click derecho en toda la página
+        document.addEventListener('contextmenu', e => {
+            e.preventDefault();
+            showToast("La descarga de imágenes no está permitida.");
+        });
+
+        // 2. Bloquear teclas de atajos de captura/impresión (PrintScreen, Ctrl+P)
+        document.addEventListener('keydown', e => {
+            if (e.key === 'PrintScreen' || (e.ctrlKey && e.key === 'p') || (e.metaKey && e.key === 'p') || (e.metaKey && e.shiftKey)) {
+                navigator.clipboard.writeText(''); // Intenta limpiar el portapapeles
+                showToast("Acción no permitida.");
+            }
+        });
+        document.addEventListener('keyup', e => {
+            if (e.key === 'PrintScreen') navigator.clipboard.writeText('');
+        });
+
+        // 3. Mitigación contra herramientas de recorte (blur cuando se pierde el foco de la ventana)
+        window.addEventListener('blur', () => {
+            if (currentUser) {
+                document.body.classList.add('blur-content');
+                document.getElementById('screenshot-overlay').style.display = 'flex';
+            }
+        });
+
+        window.addEventListener('focus', () => {
+            document.body.classList.remove('blur-content');
+            document.getElementById('screenshot-overlay').style.display = 'none';
+        });
+
+    </script>
+</body>
+</html>

@@ -368,7 +368,8 @@
 
         // Compresor de imágenes para evitar límites de subida en la base de datos
         window.resizeImage = function(file, maxWidth, maxHeight) {
-            return new Promise((resolve) => {
+            return new Promise((resolve, reject) => {
+                if (!file) return reject(new Error("Archivo no válido"));
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const img = new Image();
@@ -385,11 +386,13 @@
                         canvas.height = height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
-                        // Convertir a JPEG con un 80% de calidad para optimizar carga
-                        resolve(canvas.toDataURL('image/jpeg', 0.8));
+                        // Convertir a JPEG con un 60% de calidad para garantizar que no supere 1MB
+                        resolve(canvas.toDataURL('image/jpeg', 0.6));
                     };
+                    img.onerror = () => reject(new Error("Error al cargar la imagen"));
                     img.src = e.target.result;
                 };
+                reader.onerror = () => reject(new Error("Error al leer el archivo"));
                 reader.readAsDataURL(file);
             });
         };
@@ -459,42 +462,78 @@
         // Funciones conectadas a la base de datos
         window.handleHeroUploadDB = async function(file) {
             if(!firebaseUser) return;
-            window.showToast("Subiendo y optimizando portada...");
-            const base64 = await window.resizeImage(file, 1600, 1600);
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), { ...window.appSettings, heroCover: base64 });
-            window.showToast("Portada principal actualizada en la nube.");
+            try {
+                window.showToast("Subiendo y optimizando portada...");
+                const base64 = await window.resizeImage(file, 1000, 1000);
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), { ...window.appSettings, heroCover: base64 });
+                window.showToast("Portada principal actualizada en la nube.");
+            } catch (err) {
+                console.error(err);
+                window.showToast("Error al subir: Imagen demasiado grande o no válida.");
+            }
         };
 
         window.handleInteractiveUploadDB = async function(file) {
             if(!firebaseUser) return;
-            window.showToast("Subiendo imagen interactiva...");
-            const base64 = await window.resizeImage(file, 1200, 1200);
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), { ...window.appSettings, interactiveCover: base64 });
-            window.showToast("Imagen interactiva actualizada.");
+            try {
+                window.showToast("Subiendo imagen interactiva...");
+                const base64 = await window.resizeImage(file, 1000, 1000);
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), { ...window.appSettings, interactiveCover: base64 });
+                window.showToast("Imagen interactiva actualizada.");
+            } catch (err) {
+                console.error(err);
+                window.showToast("Error al subir imagen interactiva.");
+            }
         };
 
         window.handleCreateProfileDB = async function(id, name, file) {
             if(!firebaseUser) return;
-            window.showToast("Creando perfil...");
-            const base64 = await window.resizeImage(file, 800, 800);
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'categories', id), { id, name, cover: base64 });
-            window.showToast(`Perfil "${name}" guardado.`);
+            try {
+                window.showToast("Creando perfil...");
+                const base64 = await window.resizeImage(file, 800, 800);
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'categories', id), { id, name, cover: base64 });
+                window.showToast(`Perfil "${name}" guardado.`);
+            } catch (err) {
+                console.error(err);
+                window.showToast("Error al crear el perfil.");
+            }
         };
 
         window.updateProfileCoverDB = async function(categoryId, file) {
             if(!firebaseUser) return;
-            window.showToast("Subiendo nueva portada de perfil...");
-            const base64 = await window.resizeImage(file, 800, 800);
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'categories', categoryId), { cover: base64 });
-            window.showToast("Portada del perfil actualizada.");
+            try {
+                window.showToast("Subiendo nueva portada de perfil...");
+                const base64 = await window.resizeImage(file, 800, 800);
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'categories', categoryId), { cover: base64 });
+                window.showToast("Portada del perfil actualizada.");
+            } catch (err) {
+                console.error(err);
+                window.showToast("Error al actualizar portada.");
+            }
         };
 
         window.handleUploadPhotoDB = async function(id, categoryId, file, perms) {
             if(!firebaseUser) return;
-            window.showToast("Subiendo y comprimiendo fotografía...");
-            const base64 = await window.resizeImage(file, 1200, 1200); 
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'photos', id), { categoryId, url: base64, perms });
-            window.showToast("Fotografía publicada.");
+            try {
+                window.showToast("Subiendo y comprimiendo fotografía...");
+                const base64 = await window.resizeImage(file, 1000, 1000); 
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'photos', id), { categoryId, url: base64, perms });
+                window.showToast("Fotografía publicada.");
+            } catch (err) {
+                console.error(err);
+                window.showToast("Error al publicar fotografía.");
+            }
+        };
+
+        window.updatePhotoPermsDB = async function(id, perms) {
+            if(!firebaseUser) return;
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'photos', id), { perms });
+                window.showToast("Permisos actualizados.");
+            } catch (err) {
+                console.error(err);
+                window.showToast("Error al actualizar permisos.");
+            }
         };
 
         window.deletePhotoDB = async function(id) {
@@ -860,7 +899,7 @@
                     // Modificar permiso dinámicamente y guardarlo
                     checkbox.onchange = (e) => { 
                         photoData.perms[role] = e.target.checked; 
-                        window.handleUploadPhotoDB(photoId, photoData.categoryId, null, photoData.perms);
+                        window.updatePhotoPermsDB(photoId, photoData.perms);
                     };
 
                     label.appendChild(checkbox);

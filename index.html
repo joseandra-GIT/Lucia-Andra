@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Elena Rojas | Actriz - Web Book</title>
+    <title>Lucía Andra Algaba | Actriz - Web Book</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
@@ -78,9 +78,7 @@
             -webkit-touch-callout: none;
         }
         
-        img {
-            pointer-events: none;
-        }
+        /* Se ha eliminado 'pointer-events: none;' de las imágenes para permitir la interacción */
 
         #screenshot-overlay {
             display: none;
@@ -221,13 +219,13 @@
         <!-- SECCIÓN 1: HERO CINEMÁTICO -->
         <section class="snap-section flex flex-col justify-end pb-20 relative">
             <div class="absolute inset-0 z-0">
-                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80" alt="Retrato Actriz" class="w-full h-full object-cover object-center opacity-80" />
+                <img src="https://via.placeholder.com/1200x800/111/fff?text=Portada+Lucia+Andra" alt="Retrato Actriz" class="w-full h-full object-cover object-center opacity-80" />
                 <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
             </div>
             
             <div class="z-10 px-8 text-center reveal">
                 <p class="text-sm uppercase tracking-[0.3em] text-gray-300 mb-2">Actriz | Modelo</p>
-                <h1 class="text-5xl md:text-7xl font-bold cinematic-font mb-4">Elena<br>Rojas</h1>
+                <h1 class="text-5xl md:text-7xl font-bold cinematic-font mb-4">Lucía Andra<br>Algaba</h1>
                 <p class="font-light text-gray-400">Desliza para descubrir</p>
                 
                 <div class="mt-6 flex justify-center">
@@ -269,7 +267,7 @@
                     <h3 class="text-2xl cinematic-font font-bold mb-4 text-white border-b border-white/20 pb-2">Comedia</h3>
                     <div id="photos-comedia" class="space-y-6">
                         <div id="card-comedia-1" class="relative rounded-xl overflow-hidden shadow-2xl">
-                            <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=600&q=80" alt="Comedia" class="w-full h-auto max-h-[60vh] object-cover" />
+                            <img src="https://via.placeholder.com/600x400/222/fff?text=Perfil+Comedia" alt="Comedia" class="w-full h-auto max-h-[60vh] object-cover" />
                         </div>
                     </div>
                 </div>
@@ -279,7 +277,7 @@
                     <h3 class="text-2xl cinematic-font font-bold mb-4 text-white border-b border-white/20 pb-2">Drama</h3>
                     <div id="photos-drama" class="space-y-6">
                         <div id="card-drama-1" class="relative rounded-xl overflow-hidden shadow-2xl">
-                            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80" alt="Drama" class="w-full h-auto max-h-[60vh] object-cover" />
+                            <img src="https://via.placeholder.com/600x400/333/fff?text=Perfil+Drama" alt="Drama" class="w-full h-auto max-h-[60vh] object-cover" />
                         </div>
                     </div>
                 </div>
@@ -289,7 +287,7 @@
                     <h3 class="text-2xl cinematic-font font-bold mb-4 text-white border-b border-white/20 pb-2">Época</h3>
                     <div id="photos-epoca" class="space-y-6">
                         <div id="card-epoca-1" class="relative rounded-xl overflow-hidden shadow-2xl">
-                            <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80" alt="Época" class="w-full h-auto max-h-[60vh] object-cover" />
+                            <img src="https://via.placeholder.com/600x400/444/fff?text=Perfil+Epoca" alt="Época" class="w-full h-auto max-h-[60vh] object-cover" />
                         </div>
                     </div>
                 </div>
@@ -622,6 +620,13 @@
         document.addEventListener('contextmenu', e => {
             e.preventDefault();
             showToast("La descarga de imágenes no está permitida.");
+        });
+
+        // NUEVO: Evitar arrastrar imágenes
+        document.addEventListener('dragstart', e => {
+            if (e.target.tagName === 'IMG') {
+                e.preventDefault();
+            }
         });
 
         document.addEventListener('keydown', e => {

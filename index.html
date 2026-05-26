@@ -1,963 +1,454 @@
-<!DOCTYPE html>
-<html lang="es" class="scroll-smooth">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lucía Andra Algaba | Actriz - Web Book</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-    <style>
-        ::-webkit-scrollbar {
-            display: none;
-        }
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #050505;
-            color: #ffffff;
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        h1, h2, h3, .cinematic-font {
-            font-family: 'Playfair Display', serif;
-        }
-        
-        .snap-container {
-            height: 100vh;
-            overflow-y: scroll;
-            scroll-snap-type: y mandatory;
-        }
-        .snap-section {
-            height: 100vh;
-            scroll-snap-align: start;
-            position: relative;
-            overflow: hidden;
-        }
+import React, { useState, useMemo } from 'react';
+import { Search, Dices, Users, Package, PlayCircle, AlertTriangle, Shuffle, X, Tag, ImageIcon } from 'lucide-react';
 
-        .reveal {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 1s cubic-bezier(0.5, 0, 0, 1);
-        }
-        .reveal.active {
-            opacity: 1;
-            transform: translateY(0);
-        }
+// --- DATA: Extraída del documento proporcionado ---
+const gamesData = [
+  // DESINHIBICIÓN
+  {
+    id: 1, category: 'Desinhibición', title: 'BÚSCATE LA VIDA',
+    material: 'Balones, conos, Aros, picas.',
+    organization: '1ª partida en solitario, 2ª partida en parejas.',
+    development: 'Cuando se dé una señal todos saldrán corriendo a coger un material que habrá tirado por el campo de juego, tendrán que ir eliminando a los demás participantes (se elimina dando con el balón). Gana el último jugador en pie.',
+    rules: 'Los balones serán bolas de pintura, los conos son escudos temporales, los aros son vidas y las picas puntos. En parejas, para revivir a tu pareja tendrás que hacerle un baile.',
+    variants: 'Jugar en parejas y para revivir, buscar una pelota y contar un chiste que les hará inmortales.'
+  },
+  {
+    id: 2, category: 'Desinhibición', title: 'LA ESTATUA',
+    material: 'Ninguno.',
+    organization: 'En grupos de 5 personas, uno tiene que ser la estatua.',
+    development: 'Uno tiene que ser la estatua y los otros cuatro tienen que intentar hacer reír a la "estatua", con bailes, mimos o cualquier cosa, pero sin tocarla y sin hablar. Si se ríe, intercambian roles.',
+    rules: 'No se puede tocar a la persona que está haciendo de estatua ni tampoco se puede hablar.',
+    variants: 'En vez de hacer gestos, tienen que contarle a la estatua uno por uno, una historia para que se ría.'
+  },
+  {
+    id: 3, category: 'Desinhibición', title: 'EL CHICLE MÁGICO',
+    material: 'Buena voz y ganas de divertirse.',
+    organization: 'La clase se colocará en círculo, con visibilidad de todos.',
+    development: 'Consiste en imaginarse que tienen un chicle imaginario con el que pueden crear cualquier objeto y pasárselo al de al lado. (Ej: Crear un coche, pasarlo y el siguiente lo deforma para crear otra cosa).',
+    rules: 'No sacar del contexto en el que se esté jugando y tener gran imaginación.',
+    variants: 'Cambiar el contexto del juego, por ejemplo de alguna asignatura o deporte.'
+  },
+  {
+    id: 4, category: 'Desinhibición', title: 'CLUB DE CHISTES',
+    material: 'Ninguno.',
+    organization: 'El grupo se puede dividir en dos o tres.',
+    development: 'Los grupos tendrán que inventarse un chiste relacionado con la temática que diga el monitor. El más original, gracioso y en menor tiempo, gana un punto.',
+    rules: 'Obligatorio seguir la temática. Prohibido chistes ofensivos, con lenguaje indebido o ánimo de insultar.',
+    variants: 'A la vez que se cuenta el chiste se tiene que recrear la escena relacionada.'
+  },
+  {
+    id: 5, category: 'Desinhibición', title: 'ESTATUA EMOCIONAL',
+    material: 'Ninguno.',
+    organization: 'Se hará un círculo y caminarán por el espacio.',
+    development: 'El profesor dice una emoción (alegría, miedo...). Cuando la escuchen, deben congelarse en una estatua que la represente con todo el cuerpo. Los demás intentan adivinar.',
+    rules: 'Caminar sin correr. 3 segundos para formar la estatua. No se vale moverse una vez congelado.',
+    variants: 'Estatua en equipo: formar una estatua grupal como si fueran una sola escultura.'
+  },
+  {
+    id: 6, category: 'Desinhibición', title: 'LOS ZAPATOS',
+    material: 'Los zapatos de cada participante.',
+    organization: 'Grupos de 2 en línea recta horizontal.',
+    development: 'Se quitan los zapatos y los dejan en el medio, el monitor los desordena. Al decir tiempo, los niños deben ponerse sus zapatos rápido. El grupo que termine antes gana.',
+    rules: 'No mirar mientras el monitor desordena. No tirar los zapatos de otros lejos.',
+    variants: 'Quitar los nudos de los zapatos (unidos por el monitor) y ponérselos con una mano.'
+  },
+  {
+    id: 7, category: 'Desinhibición', title: 'MÍMICA',
+    material: 'Ninguno.',
+    organization: 'Grupo formando un círculo.',
+    development: 'Un voluntario representa una acción mediante gestos sin hablar. Los demás intentan adivinar. El primero que acierte sale al centro.',
+    rules: 'No se puede hablar ni emitir sonidos.',
+    variants: 'Quien adivina, al pasar al centro, debe sumar una nueva acción a la anterior creando una secuencia.'
+  },
+  {
+    id: 8, category: 'Desinhibición', title: 'LOS CUKIS',
+    material: 'Imaginación.',
+    organization: 'Improvisación total usando objetos que no existen.',
+    development: 'Una persona dice un objeto raro imaginario (sartén que canta). Otra debe usarlo como si fuera real y exagerar las consecuencias.',
+    rules: 'Grupo mínimo de 3-4 personas. Ideal para grupos espabilados.',
+    variants: 'El objeto puede empezar a atacar, desobedecer o usarse para resolver un problema absurdo.'
+  },
 
-        #interactive-portrait {
-            transition: filter 0.5s ease, transform 0.5s ease;
-            filter: grayscale(100%) brightness(0.6);
-        }
-        .holding #interactive-portrait {
-            filter: grayscale(0%) brightness(1.1);
-            transform: scale(1.05);
-        }
-        
-        .pulse-ring {
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 15px rgba(255, 255, 255, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
-        }
+  // COLECTIVO
+  {
+    id: 9, category: 'Colectivo', title: 'DESAFÍO DE LA TORRE MÁS ALTA',
+    material: 'Palos, conos, balones, imaginación...',
+    organization: '1 en 1, parejas o tríos.',
+    development: 'El monitor tiene un saco de materiales. Un miembro de cada grupo sale a poner material para hacer una torre lo más alta posible sin que caiga.',
+    rules: 'No se pueden poner dos materiales a la vez. Al finalizar el tiempo no se puede mover nada.',
+    variants: 'Establecer tema (puente, castillo), construcción a ciegas o limitación de materiales.'
+  },
+  {
+    id: 10, category: 'Colectivo', title: 'COMPETICIÓN PPT',
+    material: 'Aros.',
+    organization: '2 equipos repartidos en partes iguales.',
+    development: '12 aros en fila. A la voz de salida, van saltando de aro en aro. Al encontrarse con el rival, juegan Piedra-Papel-Tijera. El ganador sigue saltando, el perdedor sale y su equipo manda a otro.',
+    rules: 'Eliminado si salta de más o si hace trampas en el PPT.',
+    variants: 'En vez de PPT, responder preguntas de cultura general.'
+  },
+  {
+    id: 11, category: 'Colectivo', title: 'LA FILA',
+    material: 'Nada.',
+    organization: 'Dos grupos en fila india.',
+    development: 'Carrera de relevos haciendo lo que el monitor diga (animales, cantando, tareas domésticas...).',
+    rules: 'Ir hasta la marca y volver para chocar la mano al compañero.',
+    variants: 'Salir de uno en uno o todos juntos haciendo roles complementarios.'
+  },
+  {
+    id: 12, category: 'Colectivo', title: 'LA QUEDA',
+    material: 'Espacio amplio.',
+    organization: 'Uno "la queda" y los demás se esconden.',
+    development: '"El que la queda" se esconde. Los demás lo buscan. Al encontrarlo, se esconden con él hasta que llegue el último (Sardinas en lata).',
+    rules: 'Grupo mínimo de 3-4 personas. Contar tiempo para esconderse.',
+    variants: 'Añadir roles como "guardián o saboteador" que engañe a los que buscan.'
+  },
+  {
+    id: 13, category: 'Colectivo', title: 'EL TELÉFONO ROTO DIBUJANDO',
+    material: 'Papeles, lápiz o boli.',
+    organization: 'Subgrupos de 5 o 6 personas en fila.',
+    development: 'Al primero se le da una frase y la dibuja (20s). El segundo escribe qué cree que es el dibujo. El tercero dibuja la frase del segundo, y así sucesivamente.',
+    rules: 'Solo 20 segundos para dibujar o escribir.',
+    variants: 'En vez de escribir, actuar el dibujo para el siguiente.'
+  },
+  {
+    id: 14, category: 'Colectivo', title: 'TOQUES Y GOLES',
+    material: 'Porterías y balones.',
+    organization: '4 equipos de iguales participantes.',
+    development: 'El equipo debe realizar 8 pases sin que caiga al suelo para poder hacer gol. El gol se realiza únicamente de cabeza.',
+    rules: 'Si el balón cae, pasa al otro equipo. Remates solo de cabeza. El que tiene el balón no puede correr, solo pivotar.',
+    variants: 'Reducir el número de toques para más intensidad.'
+  },
+  {
+    id: 15, category: 'Colectivo', title: 'JUEGO DEL QUIÉN ES QUIÉN',
+    material: 'Móviles o papeles.',
+    organization: 'En pareja uno enfrente del otro.',
+    development: 'Uno se pone un nombre (artista, famoso) en la frente/móvil y el otro tiene que adivinar quién es.',
+    rules: 'No mirar a otras parejas.',
+    variants: 'Solo se pueden hacer preguntas de sí o no.'
+  },
+  {
+    id: 16, category: 'Colectivo', title: 'EL LENGUAJE SECRETO',
+    material: 'Objeto pequeño.',
+    organization: 'Grupos de 4-5. Un guía y los demás buscadores.',
+    development: 'Buscadores vendados. El equipo pacta un lenguaje secreto (ej: "Arriba" = "Atrás"). El guía dirige para encontrar el objeto escondido usando solo ese lenguaje.',
+    rules: 'Penalización si el guía usa otro lenguaje o si los buscadores se desvendan.',
+    variants: 'Añadir obstáculos en la pista.'
+  },
+  {
+    id: 17, category: 'Colectivo', title: '3 EN RAYA CIEGO',
+    material: '9 aros, conos de colores, antifaces.',
+    organization: '4 equipos. 2 parrillas de juego.',
+    development: 'Carrera de relevos. El jugador, vendado, es guiado por su equipo para colocar su cono en un aro. Objetivo: hacer 3 en raya.',
+    rules: 'Cuando ya hay 3 conos, los siguientes jugadores deben mover un cono ya colocado. Comunicación verbal esencial.',
+    variants: 'Ninguna especificada. Dinámica de competición simultánea.'
+  },
+  {
+    id: 18, category: 'Colectivo', title: 'RECREA LA IMAGEN',
+    material: 'Imaginación.',
+    organization: 'Dos grupos o más.',
+    development: 'El monitor dice una situación. El grupo tiene un tiempo para elegir roles y representar un mini corto.',
+    rules: 'Grupos independientes. Luchar por ser el más original y gracioso.',
+    variants: 'Hacerlo a ciegas con un guía, o representarlo solo con mímica.'
+  },
+  {
+    id: 19, category: 'Colectivo', title: 'LA VOZ',
+    material: 'Una voz y ganas de cantar.',
+    organization: 'Grupos de 3/4. Grito de equipo.',
+    development: 'El monitor dice una palabra y deben cantar una canción que la contenga.',
+    rules: 'Respetar pausas. 30 segundos para cantar.',
+    variants: 'Palabras relacionadas con una asignatura o tema.'
+  },
+  {
+    id: 20, category: 'Colectivo', title: 'LA RECOLECTA DE COSECHAS',
+    material: 'Ninguno.',
+    organization: 'Dos grupos (o más).',
+    development: 'Cada equipo elige a un agricultor. Los demás se sientan agarrados formando una hilera (cosecha). Los agricultores deben arrancar la cosecha del equipo rival tirando de ellos.',
+    rules: 'Prohibido agarrar haciendo daño o zonas sensibles.',
+    variants: 'Si es muy difícil, la cosecha se agarra solo de una mano.'
+  },
 
-        .vertical-gallery {
-            max-height: 75vh;
-            overflow-y: auto;
-            width: 100%;
-            padding-bottom: 2rem;
-            scroll-behavior: smooth; 
-        }
+  // CANCIONES
+  {
+    id: 21, category: 'Canciones', title: 'TIC TIC',
+    material: 'Ninguno.',
+    organization: 'Grupo en círculo.',
+    development: 'Canción: "El doctor me ha dicho que no tengo nada pero yo estoy seguro que tengo un tic tic tic". Hacen un gesto. Cada uno canta creando su propio tic.',
+    rules: 'Respetar el turno de canto.',
+    variants: 'Hacer su tic y acumular el de los compañeros anteriores.'
+  },
+  {
+    id: 22, category: 'Canciones', title: 'MI CANCIÓN',
+    material: 'Nada.',
+    organization: 'En círculo.',
+    development: 'Canción de la adrenalina y "moler café". Agarrados de la mano girando, y al decir "moler café", saltan a la izquierda.',
+    rules: 'Sincronizar el salto.',
+    variants: 'Segunda ronda: hombros. Tercera: rodillas. Cuarta: tobillos.'
+  },
 
-        /* --- Clases de Seguridad --- */
-        body {
-            -webkit-user-select: none;
-            user-select: none;
-            -webkit-touch-callout: none;
-        }
+  // MUCHOS MATERIALES
+  {
+    id: 23, category: 'Muchos materiales', title: 'EL SACO',
+    material: 'Palos, conos, balones, imaginación...',
+    organization: 'Individual o pequeños grupos.',
+    development: 'Sacan un objeto del saco ciego y deben realizar una escena de película o situación improvisada con él (ej: palo como guitarra).',
+    rules: 'Los demás intentan adivinar. El que adivina sale.',
+    variants: 'Hacer un anuncio de teletienda intentando vender el objeto.'
+  },
 
-        #screenshot-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: #000;
-            z-index: 99999;
-            color: #444;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            font-size: 1.2rem;
-            font-family: 'Inter', sans-serif;
-        }
+  // UNO CONTRA TODOS
+  {
+    id: 24, category: 'Uno contra todos', title: 'ESTATUAS (BOTE SORPRESA / PILLA PILLA)',
+    material: 'Balón (para la variante).',
+    organization: 'Límite espacial, un "pillador".',
+    development: 'Variante del pilla-pilla tradicional.',
+    rules: 'Respetar los límites espaciales.',
+    variants: 'Acumular perdedores, saltar en aros...'
+  },
+  {
+    id: 25, category: 'Uno contra todos', title: 'BOTE SORPRESA',
+    material: 'Un balón.',
+    organization: 'Monitor en el centro, grupo en círculo.',
+    development: 'El monitor suelta el balón. Cuando bote, el grupo debe dar una palmada. Si no bota y alguien da palmada, recibe el balón. El grupo tiene 3s para huir y él debe darles con el balón.',
+    rules: 'Obligatorio palmada al botar. No dispersarse hasta que el penalizado tenga el balón.',
+    variants: 'Añadir un monitor con otro balón.'
+  },
+  {
+    id: 26, category: 'Uno contra todos', title: 'EL LÁSER',
+    material: 'Conos, cuerdas, picas.',
+    organization: 'Cuerdas entrecruzadas formando pasadizo láser.',
+    development: 'Por parejas deben atravesar sin tocar las cuerdas. Si rozan, vuelven al inicio.',
+    rules: 'Deben ir agarrados de la mano a la par.',
+    variants: 'Agarrarse por otra parte del cuerpo (ej: codo).'
+  },
+  {
+    id: 27, category: 'Uno contra todos', title: 'PPT MENOS UNO',
+    material: 'Sin material.',
+    organization: 'Parejas.',
+    development: 'Se juega PPT sacando ambas manos. A la cuenta de 3, viendo las manos del rival, se retira una mano. El resultado lo dictan las manos sobrantes.',
+    rules: 'No dudar al retirar la mano, no cambiar el gesto.',
+    variants: 'Acumular perdedores a la espalda.'
+  },
+  {
+    id: 28, category: 'Uno contra todos', title: 'SIMÓN DICE (AL CONTRARIO)',
+    material: 'Ninguno.',
+    organization: 'Un líder (Simón), los demás frente a él.',
+    development: 'Simón da órdenes ("Simón dice..."). Los jugadores deben hacer LO CONTRARIO de lo que pide. El que se equivoca, eliminado.',
+    rules: 'En esta variante NO importa si falta la frase "Simón dice", lo clave es hacer lo contrario.',
+    variants: 'Simón da órdenes más rápido, o realiza él mismo gestos para despistar.'
+  },
+  {
+    id: 29, category: 'Uno contra todos', title: 'BINGO',
+    material: 'Folio y boli por participante.',
+    organization: 'Libre por la pista.',
+    development: 'Cada casilla del folio tiene una pregunta (ej: ¿Has visitado África?). Deben preguntar a los demás para encontrar a alguien que cumpla y tachar. Quien completa, gana.',
+    rules: 'Máximo 2 casillas tachadas por la misma persona.',
+    variants: 'Al tachar casilla, intercambiar el folio con otro para que no memoricen respuestas.'
+  }
+];
 
-        .blur-content #main-container {
-            filter: blur(20px) grayscale(100%);
-            opacity: 0;
-        }
-    </style>
-</head>
-<body class="antialiased selection:bg-white selection:text-black">
+const CATEGORIES = ['Todos', 'Desinhibición', 'Colectivo', 'Canciones', 'Muchos materiales', 'Uno contra todos'];
 
-    <div id="screenshot-overlay">
-        <p>Contenido Protegido.<br><span class="text-sm">Las capturas de pantalla están deshabilitadas.</span></p>
+// --- COMPONENTES ---
+
+// Componente Tarjeta de Juego (Grid)
+const GameCard = ({ game, onClick }) => {
+  const getCategoryColor = (category) => {
+    switch(category) {
+      case 'Desinhibición': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'Colectivo': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'Canciones': return 'bg-pink-100 text-pink-800 border-pink-200';
+      case 'Muchos materiales': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'Uno contra todos': return 'bg-green-100 text-green-800 border-green-200';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  return (
+    <div 
+      onClick={() => onClick(game)}
+      className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 cursor-pointer hover:shadow-md transition-all hover:-translate-y-1 group flex flex-col h-full"
+    >
+      <div className="flex justify-between items-start mb-3">
+        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${getCategoryColor(game.category)}`}>
+          {game.category}
+        </span>
+      </div>
+      <h3 className="text-lg font-bold text-slate-800 mb-2 group-hover:text-indigo-600 transition-colors">
+        {game.title}
+      </h3>
+      <p className="text-slate-500 text-sm line-clamp-3 flex-grow">
+        {game.development}
+      </p>
+      <div className="mt-4 flex items-center text-indigo-500 text-sm font-medium">
+        <PlayCircle className="w-4 h-4 mr-1" /> Ver detalles
+      </div>
     </div>
+  );
+};
 
-    <div id="toast" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-white text-black px-6 py-3 rounded-full shadow-2xl z-[9999] opacity-0 transition-opacity duration-300 pointer-events-none hidden">
-        <span id="toast-msg" class="font-semibold text-sm"></span>
-    </div>
+// Componente Ficha de Juego (Modal)
+const GameModal = ({ game, onClose }) => {
+  if (!game) return null;
 
-    <!-- PANTALLA DE LOGIN -->
-    <div id="login-view" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-95 backdrop-blur-sm">
-        <div class="w-full max-w-sm p-8 bg-zinc-900 rounded-2xl border border-white/10 text-center mx-4">
-            <h2 class="text-3xl cinematic-font mb-2">Acceso Privado</h2>
-            <p class="text-sm text-gray-400 mb-6">Introduce tus credenciales para ver el book</p>
-            
-            <input type="text" id="username" placeholder="Usuario" class="w-full bg-black border border-white/20 rounded-lg px-4 py-3 mb-4 text-white placeholder-gray-500 focus:outline-none focus:border-white transition-colors">
-            <input type="password" id="password" placeholder="Contraseña" class="w-full bg-black border border-white/20 rounded-lg px-4 py-3 mb-6 text-white placeholder-gray-500 focus:outline-none focus:border-white transition-colors">
-            
-            <p id="login-error" class="text-red-500 text-sm mb-4 hidden">Credenciales incorrectas</p>
-            
-            <button onclick="handleLogin()" class="w-full bg-white text-black font-semibold py-3 rounded-lg hover:bg-gray-200 transition-colors">
-                Entrar
-            </button>
-            
-            <div class="mt-6 text-xs text-gray-500 text-left border-t border-white/10 pt-4">
-                <p class="mb-1">Cuentas de prueba:</p>
-                <p><b>admin</b> / admin123 (Administrador)</p>
-                <p><b>director</b> / casting (Director)</p>
-                <p><b>invitado</b> / hola (Invitado)</p>
-            </div>
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative">
+        <div className="sticky top-0 bg-white px-6 py-4 border-b border-slate-100 flex justify-between items-center z-10">
+          <div>
+             <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wider mb-1 block">
+              {game.category}
+            </span>
+            <h2 className="text-2xl font-black text-slate-800">{game.title}</h2>
+          </div>
+          <button 
+            onClick={onClose}
+            className="p-2 bg-slate-100 text-slate-500 rounded-full hover:bg-slate-200 hover:text-slate-800 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
-    </div>
 
-    <!-- PANEL DE ADMINISTRACIÓN -->
-    <div id="admin-panel" class="fixed inset-0 z-50 hidden flex-col bg-black/95 backdrop-blur-md overflow-y-auto">
-        <div class="p-6 max-w-2xl mx-auto w-full flex-grow mt-10">
-            <div class="flex justify-between items-center mb-8">
-                <h2 class="text-3xl cinematic-font">Panel de Control</h2>
-                <button onclick="closeAdmin()" class="text-white hover:text-gray-400">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
+        <div className="p-6 space-y-6">
+          <Section icon={<Package className="w-5 h-5 text-amber-500" />} title="Material" content={game.material} />
+          <Section icon={<Users className="w-5 h-5 text-blue-500" />} title="Organización" content={game.organization} />
+          <Section icon={<PlayCircle className="w-5 h-5 text-emerald-500" />} title="Desarrollo Práctico" content={game.development} />
+          <Section icon={<AlertTriangle className="w-5 h-5 text-rose-500" />} title="Reglas y Observaciones" content={game.rules} />
+          <Section icon={<Shuffle className="w-5 h-5 text-purple-500" />} title="Variantes" content={game.variants} />
+          
+          {/* Placeholder Visual para imágenes del documento original */}
+          <div className="pt-4 border-t border-slate-100">
+            <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center text-slate-400">
+              <ImageIcon className="w-12 h-12 mb-3 opacity-50" />
+              <p className="text-sm font-medium">Espacio reservado para [Imagen de Ejemplo]</p>
+              <p className="text-xs mt-1">Puedes sustituir este bloque por &lt;img src="..." /&gt;</p>
             </div>
-
-            <!-- MODIFICAR PORTADA PRINCIPAL -->
-            <div class="bg-zinc-800 border border-white/20 p-6 rounded-2xl mb-8 shadow-2xl">
-                <h3 class="text-xl cinematic-font mb-4 text-white">Modificar Portada Principal</h3>
-                <input type="file" id="new-hero-file" accept="image/*" class="w-full text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black hover:file:bg-gray-200 cursor-pointer">
-                <button onclick="handleHeroUpload()" class="w-full mt-4 bg-zinc-700 text-white font-semibold py-3 rounded-lg hover:bg-zinc-600 transition-colors">
-                    Actualizar Portada
-                </button>
-            </div>
-            
-            <!-- MODIFICAR IMAGEN INTERACTIVA -->
-            <div class="bg-zinc-800 border border-white/20 p-6 rounded-2xl mb-8 shadow-2xl">
-                <h3 class="text-xl cinematic-font mb-4 text-white">Modificar Imagen Interactiva</h3>
-                <p class="text-sm text-gray-400 mb-4">Esta es la imagen de la sección "Mantén pulsado". El efecto dramático se aplicará solo.</p>
-                <input type="file" id="new-interactive-file" accept="image/*" class="w-full text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black hover:file:bg-gray-200 cursor-pointer">
-                <button onclick="handleInteractiveUpload()" class="w-full mt-4 bg-zinc-700 text-white font-semibold py-3 rounded-lg hover:bg-zinc-600 transition-colors">
-                    Actualizar Imagen
-                </button>
-            </div>
-
-            <!-- CREAR NUEVO PERFIL (CATEGORÍA) -->
-            <div class="bg-zinc-800 border border-white/20 p-6 rounded-2xl mb-8 shadow-2xl">
-                <h3 class="text-xl cinematic-font mb-4 text-white">Crear Nuevo Perfil (Categoría)</h3>
-                <div class="space-y-4">
-                    <input type="text" id="new-profile-name" placeholder="Nombre del perfil (Ej: Villana, Deportes...)" class="w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-white transition-colors">
-                    <label class="block text-sm text-gray-400 mt-2">Sube la imagen de Portada para este perfil:</label>
-                    <input type="file" id="new-profile-cover" accept="image/*" class="w-full text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black hover:file:bg-gray-200 cursor-pointer">
-                    
-                    <button onclick="handleCreateProfile()" class="w-full mt-4 bg-zinc-700 text-white font-semibold py-3 rounded-lg hover:bg-zinc-600 transition-colors">
-                        Crear Perfil
-                    </button>
-                </div>
-            </div>
-
-            <!-- MODIFICAR PORTADA DE PERFIL EXISTENTE -->
-            <div class="bg-zinc-800 border border-white/20 p-6 rounded-2xl mb-8 shadow-2xl">
-                <h3 class="text-xl cinematic-font mb-4 text-white">Modificar Portada de Perfil</h3>
-                <div class="space-y-4">
-                    <label class="block text-sm text-gray-400">Selecciona el perfil a modificar:</label>
-                    <select id="update-profile-category" class="w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-white transition-colors">
-                        <!-- Llenado dinámicamente -->
-                    </select>
-                    
-                    <label class="block text-sm text-gray-400 mt-2">Sube la nueva imagen de Portada:</label>
-                    <input type="file" id="update-profile-cover" accept="image/*" class="w-full text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black hover:file:bg-gray-200 cursor-pointer">
-                    
-                    <button onclick="handleUpdateProfileCover()" class="w-full mt-4 bg-zinc-700 text-white font-semibold py-3 rounded-lg hover:bg-zinc-600 transition-colors">
-                        Actualizar Portada de Perfil
-                    </button>
-                </div>
-            </div>
-
-            <!-- AÑADIR FOTOGRAFÍA AL PERFIL -->
-            <div class="bg-zinc-800 border border-white/20 p-6 rounded-2xl mb-8 shadow-2xl">
-                <h3 class="text-xl cinematic-font mb-4 text-white">Añadir Fotografía a un Perfil</h3>
-                <div class="space-y-4">
-                    <label class="block text-sm text-gray-400">Selecciona el perfil de destino:</label>
-                    <select id="new-photo-category" class="w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-white transition-colors">
-                        <!-- Llenado dinámicamente -->
-                    </select>
-                    
-                    <input type="file" id="new-photo-file" accept="image/*" class="w-full mt-2 text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black hover:file:bg-gray-200 cursor-pointer">
-                    
-                    <div class="pt-2">
-                        <p class="text-sm text-gray-400 mb-2">¿Qué roles podrán ver esta foto concreta?</p>
-                        <div class="flex flex-wrap gap-6">
-                            <label class="flex items-center space-x-2 cursor-pointer">
-                                <input type="checkbox" id="perm-new-director" checked class="w-5 h-5 accent-zinc-500 rounded cursor-pointer"> 
-                                <span class="text-sm text-gray-300">Director de Casting</span>
-                            </label>
-                            <label class="flex items-center space-x-2 cursor-pointer">
-                                <input type="checkbox" id="perm-new-invitado" checked class="w-5 h-5 accent-zinc-500 rounded cursor-pointer"> 
-                                <span class="text-sm text-gray-300">Invitado General</span>
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <button onclick="handleUploadPhoto()" class="w-full mt-4 bg-white text-black font-semibold py-3 rounded-lg hover:bg-gray-200 transition-colors">
-                        Subir Imagen
-                    </button>
-                </div>
-            </div>
-
-            <!-- CONFIGURACIÓN DE INVITADOS -->
-            <div class="bg-zinc-800 border border-white/20 p-6 rounded-2xl mb-8 shadow-2xl">
-                <h3 class="text-xl cinematic-font mb-4 text-white">Configuración de Acceso</h3>
-                <label class="block text-sm text-gray-400 mb-2">Horas de acceso permitidas para Perfil Invitado:</label>
-                <div class="flex items-center space-x-4">
-                    <input type="number" id="guest-hours-input" value="1" min="0.1" step="0.1" class="w-24 bg-black border border-white/20 rounded-lg px-4 py-2 text-white text-center focus:outline-none focus:border-white">
-                    <span class="text-gray-300">hora(s)</span>
-                    <button onclick="updateGuestHours()" class="bg-zinc-700 text-white px-4 py-2 rounded-lg hover:bg-zinc-600 transition-colors text-sm">Guardar</button>
-                    <button onclick="resetGuestTimer()" class="bg-red-900/80 border border-red-500/50 text-white px-4 py-2 rounded-lg hover:bg-red-800 transition-colors text-sm">Resetear Acceso</button>
-                </div>
-            </div>
-
-            <h3 class="text-xl cinematic-font mb-4 text-white border-b border-white/20 pb-2">Gestionar Permisos de Fotos Actuales</h3>
-            <div id="admin-permissions-container" class="space-y-4">
-                <!-- Llenado dinámicamente -->
-            </div>
+          </div>
         </div>
+      </div>
     </div>
+  );
+};
 
-    <!-- BOTONES FLOTANTES -->
-    <button id="btn-open-admin" onclick="openAdmin()" class="fixed top-6 right-6 bg-zinc-800 border border-white/20 text-white px-4 py-2 rounded-full font-semibold shadow-lg z-40 hidden hover:bg-zinc-700 transition-colors">
-        ⚙️ Panel Admin
-    </button>
-
-    <div id="guest-timer-display" class="fixed top-6 right-6 bg-black/80 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-full font-semibold shadow-lg z-40 hidden flex items-center space-x-2">
-        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-        <span id="time-remaining" class="tracking-wider">00:00:00</span>
+const Section = ({ icon, title, content }) => (
+  <div className="flex gap-4">
+    <div className="mt-1 bg-slate-50 p-2 rounded-lg h-fit border border-slate-100">
+      {icon}
     </div>
-
-    <button id="btn-logout" onclick="handleLogout()" class="fixed top-6 left-6 bg-red-900/80 border border-red-500/50 text-white px-4 py-2 rounded-full text-sm shadow-lg z-40 hidden hover:bg-red-800 transition-colors">
-        Cerrar Sesión
-    </button>
-
-    <div class="snap-container hidden" id="main-container">
-
-        <!-- SECCIÓN 1: HERO CINEMÁTICO -->
-        <section class="snap-section flex flex-col justify-end pb-20 relative">
-            <div class="absolute inset-0 z-0">
-                <img id="hero-img" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80" alt="Retrato Actriz" class="w-full h-full object-cover object-center opacity-80" />
-                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
-            </div>
-            
-            <div class="z-10 px-8 text-center reveal">
-                <p class="text-sm uppercase tracking-[0.3em] text-gray-300 mb-2">Actriz | Modelo</p>
-                <h1 class="text-5xl md:text-7xl font-bold cinematic-font mb-4">Lucía Andra<br>Algaba</h1>
-                <p class="font-light text-gray-400">Desliza para descubrir</p>
-                
-                <div class="mt-6 flex justify-center">
-                    <svg class="w-6 h-6 animate-bounce text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
-                    </svg>
-                </div>
-            </div>
-        </section>
-
-        <!-- SECCIÓN 2: INTERACTIVA -->
-        <section class="snap-section flex items-center justify-center relative bg-black" id="touch-section">
-            <img id="interactive-portrait" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1000&q=80" alt="Retrato Dramático" class="absolute inset-0 w-full h-full object-cover z-0" />
-            <div class="absolute inset-0 bg-black/30 z-0 transition-opacity duration-500" id="touch-overlay"></div>
-            
-            <div class="z-10 flex flex-col items-center justify-center text-center px-6 pointer-events-none">
-                <div id="touch-indicator" class="w-20 h-20 rounded-full border border-white/50 flex items-center justify-center pulse-ring mb-6 backdrop-blur-sm bg-black/20">
-                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path>
-                    </svg>
-                </div>
-                <h2 class="text-3xl cinematic-font mb-2 touch-title transition-opacity duration-300">Mantén pulsado</h2>
-                <p class="text-sm text-gray-300 font-light touch-subtitle transition-opacity duration-300">Para ver la emoción</p>
-            </div>
-        </section>
-
-        <!-- SECCIÓN 3: PERFILES Y GALERÍAS -->
-        <section class="snap-section bg-zinc-900 flex flex-col pt-16 pb-8">
-            
-            <!-- CONTENEDOR 1: LISTADO DE PORTADAS DE PERFILES -->
-            <div id="profiles-grid-view" class="flex flex-col h-full">
-                <div class="px-6 mb-6 reveal">
-                    <h2 class="text-3xl cinematic-font text-white mb-2">Perfiles</h2>
-                    <div class="w-12 h-[1px] bg-white"></div>
-                </div>
-                <div id="profiles-list-container" class="vertical-gallery px-6 grid grid-cols-1 sm:grid-cols-2 gap-6 reveal" style="transition-delay: 200ms;">
-                    <!-- Portadas dinámicas -->
-                </div>
-            </div>
-
-            <!-- CONTENEDOR 2: FOTOS DENTRO DE UN PERFIL (MODAL FIJO) -->
-            <div id="profile-detail-view" class="hidden flex flex-col fixed inset-0 bg-black z-50 pt-12 pb-0">
-                
-                <button onclick="closeProfileDetail()" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-zinc-800/90 backdrop-blur-md border border-white/20 text-white px-6 py-3 rounded-full font-semibold shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-[60] flex items-center gap-2 hover:bg-zinc-700 transition-all">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                    Volver a Perfiles
-                </button>
-
-                <div class="px-6 mb-4 text-center shrink-0">
-                    <h2 id="active-profile-title" class="text-3xl cinematic-font text-white">Nombre Perfil</h2>
-                </div>
-                
-                <div id="active-profile-photos" class="flex-1 overflow-y-auto px-6 space-y-8 pb-28" style="scroll-behavior: smooth;">
-                    <!-- Fotos completas dinámicas -->
-                </div>
-            </div>
-
-        </section>
-
-        <!-- SECCIÓN 4: FICHA TÉCNICA -->
-        <section class="snap-section bg-black flex flex-col items-center justify-center px-8 relative">
-            <div class="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1200&q=80')] bg-cover bg-center"></div>
-            <div class="z-10 w-full max-w-md bg-zinc-900/80 backdrop-blur-md p-8 rounded-2xl border border-white/10 reveal">
-                <h2 class="text-3xl cinematic-font mb-6 text-center">Ficha Física</h2>
-                <div class="space-y-4 text-sm">
-                    <div class="flex justify-between border-b border-white/10 pb-2">
-                        <span class="text-gray-400">Altura</span>
-                        <span class="font-semibold">1.72m</span>
-                    </div>
-                    <div class="flex justify-between border-b border-white/10 pb-2">
-                        <span class="text-gray-400">Ojos</span>
-                        <span class="font-semibold">Marrón Intenso</span>
-                    </div>
-                    <div class="flex justify-between pb-2">
-                        <span class="text-gray-400">Cabello</span>
-                        <span class="font-semibold">Castaño Oscuro</span>
-                    </div>
-                </div>
-            </div>
-        </section>
+    <div>
+      <h4 className="font-bold text-slate-800 text-lg mb-1">{title}</h4>
+      <p className="text-slate-600 leading-relaxed">{content}</p>
     </div>
+  </div>
+);
 
-    <!-- ========================================================= -->
-    <!-- MÓDULO FIREBASE PARA GUARDADO PERSISTENTE EN LA NUBE      -->
-    <!-- ========================================================= -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, updateDoc, getDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+// --- COMPONENTE PRINCIPAL ---
+export default function App() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const [selectedGame, setSelectedGame] = useState(null);
 
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'webbook-actriz-default';
+  const filteredGames = useMemo(() => {
+    return gamesData.filter(game => {
+      const matchCategory = selectedCategory === 'Todos' || game.category === selectedCategory;
+      const matchSearch = game.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          game.development.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchCategory && matchSearch;
+    });
+  }, [searchTerm, selectedCategory]);
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+  const selectRandomGame = () => {
+    const randomIdx = Math.floor(Math.random() * gamesData.length);
+    setSelectedGame(gamesData[randomIdx]);
+  };
 
-        let firebaseUser = null;
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-indigo-100 selection:text-indigo-900">
+      
+      {/* Header */}
+      <header className="bg-indigo-600 text-white pt-12 pb-24 px-6 md:px-12 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" 
+             style={{ backgroundImage: 'radial-gradient(circle at 20px 20px, white 2px, transparent 0)', backgroundSize: '40px 40px' }}>
+        </div>
+        <div className="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-black mb-3 tracking-tight">Rueda de Juegos</h1>
+            <p className="text-indigo-200 text-lg md:text-xl font-medium max-w-xl">
+              Fichero didáctico interactivo para educación física y animación grupal.
+            </p>
+          </div>
+          <button 
+            onClick={selectRandomGame}
+            className="flex items-center gap-2 bg-white text-indigo-700 px-6 py-3 rounded-full font-bold shadow-lg hover:bg-indigo-50 hover:scale-105 transition-all focus:outline-none focus:ring-4 focus:ring-indigo-300"
+          >
+            <Dices className="w-5 h-5" /> Juego Aleatorio
+          </button>
+        </div>
+      </header>
 
-        // Compresor de imágenes para evitar límites de subida en la base de datos
-        window.resizeImage = function(file, maxWidth, maxHeight) {
-            return new Promise((resolve, reject) => {
-                if (!file) return reject(new Error("Archivo no válido"));
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        let width = img.width;
-                        let height = img.height;
-                        if (width > maxWidth || height > maxHeight) {
-                            const ratio = Math.min(maxWidth / width, maxHeight / height);
-                            width *= ratio;
-                            height *= ratio;
-                        }
-                        const canvas = document.createElement('canvas');
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        // Convertir a JPEG con un 60% de calidad para garantizar que no supere 1MB
-                        resolve(canvas.toDataURL('image/jpeg', 0.6));
-                    };
-                    img.onerror = () => reject(new Error("Error al cargar la imagen"));
-                    img.src = e.target.result;
-                };
-                reader.onerror = () => reject(new Error("Error al leer el archivo"));
-                reader.readAsDataURL(file);
-            });
-        };
-
-        async function initAuth() {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
-        }
-
-        onAuthStateChanged(auth, (user) => {
-            firebaseUser = user;
-            if (user) {
-                setupListeners();
-            }
-        });
-
-        function setupListeners() {
-            // Escuchar cambios en la configuración general (Portadas y horas)
-            onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), (docSnap) => {
-                if (docSnap.exists()) {
-                    window.appSettings = { ...window.appSettings, ...docSnap.data() };
-                    document.getElementById('hero-img').src = window.appSettings.heroCover;
-                    document.getElementById('interactive-portrait').src = window.appSettings.interactiveCover;
-                    document.getElementById('guest-hours-input').value = window.appSettings.guestAllowedHours;
-                } else {
-                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), window.appSettings);
-                }
-            });
-
-            // Escuchar cambios en los Perfiles (Categorías)
-            const catRef = collection(db, 'artifacts', appId, 'public', 'data', 'categories');
-            onSnapshot(catRef, (snap) => {
-                if (snap.empty) {
-                    // Sembrar perfiles por defecto si la base de datos está vacía
-                    const defaultCats = [
-                        { id: 'comedia', name: 'Comedia', cover: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=600&q=80' },
-                        { id: 'drama', name: 'Drama', cover: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80' },
-                        { id: 'epoca', name: 'Época', cover: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80' }
-                    ];
-                    defaultCats.forEach(c => setDoc(doc(catRef, c.id), c));
-                } else {
-                    window.categories = {};
-                    snap.forEach(d => window.categories[d.id] = d.data());
-                    if (window.currentUser) window.renderProfiles();
-                }
-            });
-
-            // Escuchar cambios en las Fotografías
-            const photoRef = collection(db, 'artifacts', appId, 'public', 'data', 'photos');
-            onSnapshot(photoRef, (snap) => {
-                window.photos = {};
-                snap.forEach(d => window.photos[d.id] = d.data());
-                if (window.currentUser) {
-                    window.renderProfiles();
-                    if (document.getElementById('admin-panel').classList.contains('flex')) {
-                        window.renderAdminPermissionsList();
-                    }
-                }
-            });
-        }
-
-        initAuth();
-
-        // Funciones conectadas a la base de datos
-        window.handleHeroUploadDB = async function(file) {
-            if(!firebaseUser) return;
-            try {
-                window.showToast("Subiendo y optimizando portada...");
-                const base64 = await window.resizeImage(file, 1000, 1000);
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), { ...window.appSettings, heroCover: base64 });
-                window.showToast("Portada principal actualizada en la nube.");
-            } catch (err) {
-                console.error(err);
-                window.showToast("Error al subir: Imagen demasiado grande o no válida.");
-            }
-        };
-
-        window.handleInteractiveUploadDB = async function(file) {
-            if(!firebaseUser) return;
-            try {
-                window.showToast("Subiendo imagen interactiva...");
-                const base64 = await window.resizeImage(file, 1000, 1000);
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), { ...window.appSettings, interactiveCover: base64 });
-                window.showToast("Imagen interactiva actualizada.");
-            } catch (err) {
-                console.error(err);
-                window.showToast("Error al subir imagen interactiva.");
-            }
-        };
-
-        window.handleCreateProfileDB = async function(id, name, file) {
-            if(!firebaseUser) return;
-            try {
-                window.showToast("Creando perfil...");
-                const base64 = await window.resizeImage(file, 800, 800);
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'categories', id), { id, name, cover: base64 });
-                window.showToast(`Perfil "${name}" guardado.`);
-            } catch (err) {
-                console.error(err);
-                window.showToast("Error al crear el perfil.");
-            }
-        };
-
-        window.updateProfileCoverDB = async function(categoryId, file) {
-            if(!firebaseUser) return;
-            try {
-                window.showToast("Subiendo nueva portada de perfil...");
-                const base64 = await window.resizeImage(file, 800, 800);
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'categories', categoryId), { cover: base64 });
-                window.showToast("Portada del perfil actualizada.");
-            } catch (err) {
-                console.error(err);
-                window.showToast("Error al actualizar portada.");
-            }
-        };
-
-        window.handleUploadPhotoDB = async function(id, categoryId, file, perms) {
-            if(!firebaseUser) return;
-            try {
-                window.showToast("Subiendo y comprimiendo fotografía...");
-                const base64 = await window.resizeImage(file, 1000, 1000); 
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'photos', id), { categoryId, url: base64, perms });
-                window.showToast("Fotografía publicada.");
-            } catch (err) {
-                console.error(err);
-                window.showToast("Error al publicar fotografía.");
-            }
-        };
-
-        window.updatePhotoPermsDB = async function(id, perms) {
-            if(!firebaseUser) return;
-            try {
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'photos', id), { perms });
-                window.showToast("Permisos actualizados.");
-            } catch (err) {
-                console.error(err);
-                window.showToast("Error al actualizar permisos.");
-            }
-        };
-
-        window.deletePhotoDB = async function(id) {
-            if(!firebaseUser) return;
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'photos', id));
-            window.showToast("Fotografía eliminada de la base de datos.");
-        };
-
-        window.updateGuestHoursDB = async function(hours) {
-            if(!firebaseUser) return;
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), { ...window.appSettings, guestAllowedHours: hours });
-            window.showToast("Horas de acceso guardadas.");
-        };
-
-        // Lógica de sesión individual persistente por dispositivo conectada a Firestore
-        window.checkGuestSession = async function() {
-            if(!firebaseUser) return null;
-            const sessionDoc = await getDoc(doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'session'));
-            const resetTime = window.appSettings.globalGuestResetTime || 0;
-            
-            if (sessionDoc.exists()) {
-                const data = sessionDoc.data();
-                if (data.createdAt < resetTime) {
-                     const newExp = Date.now() + (window.appSettings.guestAllowedHours * 3600000);
-                     await setDoc(doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'session'), { expirationTime: newExp, createdAt: Date.now() });
-                     return newExp;
-                }
-                return data.expirationTime;
-            } else {
-                const newExp = Date.now() + (window.appSettings.guestAllowedHours * 3600000);
-                await setDoc(doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'session'), { expirationTime: newExp, createdAt: Date.now() });
-                return newExp;
-            }
-        };
-
-        window.resetGuestSession = async function() {
-            if(!firebaseUser) return;
-            const resetTime = Date.now();
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), { ...window.appSettings, globalGuestResetTime: resetTime });
-            window.showToast("Contador de invitados reseteado para todo el mundo.");
-        };
-    </script>
-
-    <!-- ========================================================= -->
-    <!-- LÓGICA PRINCIPAL DE INTERFAZ DEL WEB BOOK                 -->
-    <!-- ========================================================= -->
-    <script>
-        // Animaciones Reveal
-        const revealElements = document.querySelectorAll('.reveal');
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) entry.target.classList.add('active');
-            });
-        }, { threshold: 0.1 });
-        revealElements.forEach(el => observer.observe(el));
-
-        // Eventos Hold to Reveal
-        const touchSection = document.getElementById('touch-section');
-        function startInteraction() { touchSection.classList.add('holding'); document.querySelector('.touch-title').style.opacity='0'; document.querySelector('.touch-subtitle').style.opacity='0'; document.getElementById('touch-indicator').style.opacity='0'; document.getElementById('touch-overlay').style.opacity='0'; }
-        function endInteraction() { touchSection.classList.remove('holding'); document.querySelector('.touch-title').style.opacity='1'; document.querySelector('.touch-subtitle').style.opacity='1'; document.getElementById('touch-indicator').style.opacity='1'; document.getElementById('touch-overlay').style.opacity='1'; }
+      {/* Main Content Area */}
+      <main className="max-w-6xl mx-auto px-4 md:px-6 -mt-12 relative z-20 pb-20">
         
-        touchSection.addEventListener('touchstart', startInteraction, {passive: true});
-        touchSection.addEventListener('touchend', endInteraction);
-        touchSection.addEventListener('mousedown', startInteraction);
-        touchSection.addEventListener('mouseup', endInteraction);
-        touchSection.addEventListener('mouseleave', endInteraction);
+        {/* Controls Container */}
+        <div className="bg-white rounded-2xl shadow-md border border-slate-200 p-4 md:p-6 mb-8 flex flex-col md:flex-row gap-4 items-center justify-between">
+          
+          {/* Search */}
+          <div className="relative w-full md:w-96">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-slate-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Buscar por nombre o palabra clave..."
+              className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
 
-        // Referencias globales de datos y estado
-        window.categories = {};
-        window.photos = {};
-        window.appSettings = {
-            heroCover: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80',
-            interactiveCover: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1000&q=80',
-            guestAllowedHours: 1
-        };
-        window.currentUser = null;
+          {/* Categories */}
+          <div className="flex flex-wrap gap-2 justify-center md:justify-end w-full">
+            {CATEGORIES.map(category => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  selectedCategory === category 
+                    ? 'bg-slate-800 text-white shadow-md' 
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+        </div>
 
-        const mockUsers = {
-            'admin': { pass: 'admin123', role: 'admin', name: 'Administrador' },
-            'director': { pass: 'casting', role: 'director', name: 'Director de Casting' },
-            'invitado': { pass: 'hola', role: 'invitado', name: 'Usuario General' }
-        };
+        {/* Status / Count */}
+        <div className="flex items-center gap-2 mb-6 text-slate-500 font-medium">
+          <Tag className="w-4 h-4" />
+          <span>Mostrando {filteredGames.length} juegos</span>
+        </div>
 
-        let guestTimerInterval = null;
+        {/* Grid */}
+        {filteredGames.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredGames.map((game) => (
+              <GameCard key={game.id} game={game} onClick={setSelectedGame} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20 bg-white rounded-2xl border border-slate-200 border-dashed">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 text-slate-400 mb-4">
+              <Search className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-700 mb-2">No se encontraron juegos</h3>
+            <p className="text-slate-500">Prueba con otros términos de búsqueda o cambia la categoría.</p>
+          </div>
+        )}
+      </main>
 
-        const loginView = document.getElementById('login-view');
-        const mainContainer = document.getElementById('main-container');
-        const btnLogout = document.getElementById('btn-logout');
-        const btnOpenAdmin = document.getElementById('btn-open-admin');
-        const adminPanel = document.getElementById('admin-panel');
-
-        // Referencias de las Vistas de Perfiles
-        const profilesGridView = document.getElementById('profiles-grid-view');
-        const profilesListContainer = document.getElementById('profiles-list-container');
-        const profileDetailView = document.getElementById('profile-detail-view');
-        const activeProfileTitle = document.getElementById('active-profile-title');
-        const activeProfilePhotos = document.getElementById('active-profile-photos');
-        
-        const dropdownCategory = document.getElementById('new-photo-category');
-        const updateDropdownCategory = document.getElementById('update-profile-category');
-
-
-        window.showToast = function(message) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toast-msg').innerText = message;
-            toast.classList.remove('hidden');
-            setTimeout(() => toast.classList.remove('opacity-0'), 10);
-            setTimeout(() => {
-                toast.classList.add('opacity-0');
-                setTimeout(() => toast.classList.add('hidden'), 300);
-            }, 3000);
-        };
-
-        async function handleLogin() {
-            const userIn = document.getElementById('username').value.trim().toLowerCase();
-            const passIn = document.getElementById('password').value;
-
-            if (mockUsers[userIn] && mockUsers[userIn].pass === passIn) {
-                window.currentUser = mockUsers[userIn];
-                document.getElementById('login-error').classList.add('hidden');
-                
-                if (window.currentUser.role === 'invitado') {
-                    document.getElementById('login-error').innerText = "Verificando tu tiempo de acceso...";
-                    document.getElementById('login-error').classList.remove('hidden');
-                    
-                    const expirationTime = await window.checkGuestSession();
-                    if (expirationTime && Date.now() >= expirationTime) {
-                        document.getElementById('login-error').innerText = "Tu tiempo ha expirado. Contacta con administración.";
-                        window.currentUser = null; return;
-                    }
-                    startGuestTimer(expirationTime);
-                    document.getElementById('login-error').classList.add('hidden');
-                }
-
-                loginView.classList.add('hidden');
-                mainContainer.classList.remove('hidden');
-                btnLogout.classList.remove('hidden');
-
-                if (window.currentUser.role === 'admin') btnOpenAdmin.classList.remove('hidden');
-                
-                window.renderProfiles(); 
-            } else {
-                document.getElementById('login-error').innerText = "Credenciales incorrectas";
-                document.getElementById('login-error').classList.remove('hidden');
-            }
-        }
-
-        function handleLogout() {
-            window.currentUser = null;
-            document.getElementById('username').value = '';
-            document.getElementById('password').value = '';
-            
-            if (guestTimerInterval) clearInterval(guestTimerInterval);
-            document.getElementById('guest-timer-display').classList.add('hidden');
-
-            loginView.classList.remove('hidden');
-            mainContainer.classList.add('hidden');
-            btnLogout.classList.add('hidden');
-            btnOpenAdmin.classList.add('hidden');
-            adminPanel.classList.add('hidden');
-            adminPanel.classList.remove('flex');
-            closeProfileDetail();
-        }
-
-        function startGuestTimer(endTime) {
-            const guestTimerDisplay = document.getElementById('guest-timer-display');
-            guestTimerDisplay.classList.remove('hidden');
-            guestTimerInterval = setInterval(() => {
-                const diff = endTime - Date.now();
-                if (diff <= 0) {
-                    handleLogout(); window.showToast("Tu tiempo de acceso ha finalizado."); clearInterval(guestTimerInterval);
-                } else {
-                    const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
-                    const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
-                    const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-                    document.getElementById('time-remaining').innerText = `${h}:${m}:${s}`;
-                }
-            }, 1000);
-        }
-
-        // ==========================================
-        // RENDERIZADO DE INTERFAZ
-        // ==========================================
-
-        window.renderProfiles = function() {
-            if (!window.currentUser) return;
-            profilesListContainer.innerHTML = '';
-            
-            if (dropdownCategory) dropdownCategory.innerHTML = '';
-            if (updateDropdownCategory) updateDropdownCategory.innerHTML = '';
-
-            for (const [catId, catData] of Object.entries(window.categories)) {
-                
-                if (dropdownCategory) {
-                    const option = document.createElement('option');
-                    option.value = catId; option.innerText = catData.name;
-                    dropdownCategory.appendChild(option);
-                }
-                
-                if (updateDropdownCategory) {
-                    const optionUpdate = document.createElement('option');
-                    optionUpdate.value = catId; optionUpdate.innerText = catData.name;
-                    updateDropdownCategory.appendChild(optionUpdate);
-                }
-
-                let hasVisiblePhotos = false;
-                if (window.currentUser.role === 'admin') {
-                    hasVisiblePhotos = true;
-                } else {
-                    for (const photoId in window.photos) {
-                        if (window.photos[photoId].categoryId === catId && window.photos[photoId].perms[window.currentUser.role]) {
-                            hasVisiblePhotos = true; break;
-                        }
-                    }
-                }
-
-                if (hasVisiblePhotos) {
-                    const card = document.createElement('div');
-                    card.className = 'relative h-64 sm:h-80 rounded-xl overflow-hidden shadow-2xl cursor-pointer group';
-                    card.onclick = () => openProfileDetail(catId);
-                    
-                    card.innerHTML = `
-                        <img src="${catData.cover}" alt="${catData.name}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
-                        <div class="absolute bottom-6 left-6 flex items-center justify-between right-6">
-                            <h3 class="text-3xl cinematic-font font-bold text-white">${catData.name}</h3>
-                            <svg class="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                        </div>
-                    `;
-                    profilesListContainer.appendChild(card);
-                }
-            }
-        };
-
-        function openProfileDetail(categoryId) {
-            const catData = window.categories[categoryId];
-            activeProfileTitle.innerText = catData.name;
-            activeProfilePhotos.innerHTML = ''; 
-
-            for (const [photoId, photoData] of Object.entries(window.photos)) {
-                if (photoData.categoryId === categoryId && photoData.perms[window.currentUser.role]) {
-                    const imgDiv = document.createElement('div');
-                    imgDiv.className = 'w-full bg-zinc-900 rounded-lg overflow-hidden shadow-2xl flex justify-center py-4 border border-white/5';
-                    imgDiv.innerHTML = `<img src="${photoData.url}" alt="Foto" class="w-full h-auto max-h-[85vh] object-contain" />`;
-                    activeProfilePhotos.appendChild(imgDiv);
-                }
-            }
-
-            profilesGridView.classList.add('hidden');
-            profileDetailView.classList.remove('hidden');
-        }
-
-        function closeProfileDetail() {
-            profileDetailView.classList.add('hidden');
-            profilesGridView.classList.remove('hidden');
-            activeProfilePhotos.innerHTML = '';
-        }
-
-        // ==========================================
-        // LÓGICA DE ADMINISTRADOR CONECTADA
-        // ==========================================
-        
-        function updateGuestHours() {
-            const val = parseFloat(document.getElementById('guest-hours-input').value);
-            if (val > 0) window.updateGuestHoursDB(val);
-        }
-
-        function resetGuestTimer() { 
-            window.resetGuestSession(); 
-        }
-
-        function openAdmin() {
-            adminPanel.classList.remove('hidden'); adminPanel.classList.add('flex');
-            window.renderAdminPermissionsList();
-        }
-
-        function closeAdmin() {
-            adminPanel.classList.add('hidden'); adminPanel.classList.remove('flex');
-            window.renderProfiles(); 
-        }
-
-        function handleHeroUpload() {
-            const fileInput = document.getElementById('new-hero-file');
-            if (!fileInput.files[0]) { alert('Selecciona una imagen.'); return; }
-            window.handleHeroUploadDB(fileInput.files[0]).then(() => { fileInput.value = ''; });
-        }
-
-        function handleInteractiveUpload() {
-            const fileInput = document.getElementById('new-interactive-file');
-            if (!fileInput.files[0]) { alert('Selecciona una imagen.'); return; }
-            window.handleInteractiveUploadDB(fileInput.files[0]).then(() => { fileInput.value = ''; });
-        }
-
-        function handleCreateProfile() {
-            const nameInput = document.getElementById('new-profile-name').value.trim();
-            const fileInput = document.getElementById('new-profile-cover');
-            
-            if (!nameInput || !fileInput.files[0]) { alert('Falta el nombre o la imagen de portada.'); return; }
-            const newCatId = nameInput.toLowerCase().replace(/[^a-z0-9]/g, '-');
-            
-            window.handleCreateProfileDB(newCatId, nameInput, fileInput.files[0]).then(() => {
-                document.getElementById('new-profile-name').value = '';
-                fileInput.value = '';
-            });
-        }
-
-        function handleUpdateProfileCover() {
-            const categoryId = document.getElementById('update-profile-category').value;
-            const fileInput = document.getElementById('update-profile-cover');
-
-            if (!categoryId || !fileInput.files[0]) { 
-                alert('Selecciona un perfil y una nueva imagen para la portada.'); 
-                return; 
-            }
-
-            window.updateProfileCoverDB(categoryId, fileInput.files[0]).then(() => {
-                fileInput.value = '';
-            });
-        }
-
-        function handleUploadPhoto() {
-            const categoryId = document.getElementById('new-photo-category').value;
-            const fileInput = document.getElementById('new-photo-file');
-            const permDirector = document.getElementById('perm-new-director').checked;
-            const permInvitado = document.getElementById('perm-new-invitado').checked;
-
-            if (!fileInput.files[0] || !categoryId) { alert('Selecciona un perfil y una imagen.'); return; }
-
-            const newPhotoId = 'p-' + Date.now().toString().slice(-5);
-            window.handleUploadPhotoDB(newPhotoId, categoryId, fileInput.files[0], { 
-                admin: true, director: permDirector, invitado: permInvitado 
-            }).then(() => {
-                fileInput.value = '';
-            });
-        }
-
-        window.renderAdminPermissionsList = function() {
-            const container = document.getElementById('admin-permissions-container');
-            container.innerHTML = '';
-            
-            for (const [photoId, photoData] of Object.entries(window.photos)) {
-                // Prevenir error si la foto existe pero su categoría fue borrada previamente
-                if (!window.categories[photoData.categoryId]) continue;
-
-                const catName = window.categories[photoData.categoryId].name;
-                const block = document.createElement('div');
-                block.className = 'bg-zinc-900 border border-white/10 p-4 rounded-xl flex items-center justify-between';
-                
-                const info = document.createElement('div');
-                info.innerHTML = `<h3 class="text-white font-semibold mb-2">Dentro de: ${catName}</h3>`;
-                
-                const rolesDiv = document.createElement('div');
-                rolesDiv.className = 'flex gap-4';
-
-                ['director', 'invitado'].forEach(role => {
-                    const label = document.createElement('label');
-                    label.className = 'flex items-center space-x-2 cursor-pointer';
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.className = 'w-4 h-4 accent-zinc-500 rounded cursor-pointer';
-                    checkbox.checked = photoData.perms[role];
-                    
-                    // Modificar permiso dinámicamente y guardarlo
-                    checkbox.onchange = (e) => { 
-                        photoData.perms[role] = e.target.checked; 
-                        window.updatePhotoPermsDB(photoId, photoData.perms);
-                    };
-
-                    label.appendChild(checkbox);
-                    label.innerHTML += `<span class="text-sm text-gray-300 capitalize ml-2">${role}</span>`;
-                    rolesDiv.appendChild(label);
-                });
-
-                info.appendChild(rolesDiv);
-                block.appendChild(info);
-                
-                const rightSide = document.createElement('div');
-                rightSide.className = "flex flex-col items-center ml-4 gap-3 shrink-0";
-
-                const thumb = document.createElement('img');
-                thumb.src = photoData.url;
-                thumb.className = "w-16 h-16 object-cover rounded-md border border-white/20";
-                
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = "text-xs text-red-500 hover:text-red-400 flex items-center gap-1 transition-colors";
-                deleteBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Eliminar`;
-                deleteBtn.onclick = () => {
-                    if (confirm("¿Eliminar fotografía para siempre?")) window.deletePhotoDB(photoId);
-                };
-
-                rightSide.appendChild(thumb);
-                rightSide.appendChild(deleteBtn);
-
-                block.appendChild(rightSide);
-                container.appendChild(block);
-            }
-        };
-
-        document.getElementById('password').addEventListener('keypress', function(e) { if (e.key === 'Enter') handleLogin(); });
-
-        // ==========================================
-        // SISTEMAS DE PROTECCIÓN Y ANTI-CAPTURA
-        // ==========================================
-
-        document.addEventListener('contextmenu', e => { e.preventDefault(); window.showToast("La descarga de imágenes no está permitida."); });
-        document.addEventListener('dragstart', e => { if (e.target.tagName === 'IMG') e.preventDefault(); });
-        document.addEventListener('keydown', e => {
-            if (e.key === 'PrintScreen' || (e.ctrlKey && e.key === 'p') || (e.metaKey && e.key === 'p') || (e.metaKey && e.shiftKey)) {
-                navigator.clipboard.writeText(''); window.showToast("Acción no permitida.");
-            }
-        });
-        document.addEventListener('keyup', e => { if (e.key === 'PrintScreen') navigator.clipboard.writeText(''); });
-
-        window.addEventListener('blur', () => {
-            if (window.currentUser) {
-                document.body.classList.add('blur-content');
-                document.getElementById('screenshot-overlay').style.display = 'flex';
-            }
-        });
-        window.addEventListener('focus', () => {
-            document.body.classList.remove('blur-content');
-            document.getElementById('screenshot-overlay').style.display = 'none';
-        });
-
-    </script>
-</body>
-</html>
+      {/* Modal Render */}
+      <GameModal game={selectedGame} onClose={() => setSelectedGame(null)} />
+    </div>
+  );
+}
